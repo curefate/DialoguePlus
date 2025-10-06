@@ -21,8 +21,8 @@ namespace DS.Core
                 case Stmt_Call call:
                     OnCall?.Invoke(runtime, call);
                     break;
-                case Stmt_Assign set:
-                    OnAssign?.Invoke(runtime, set);
+                case Stmt_Assign assign:
+                    OnAssign?.Invoke(runtime, assign);
                     break;
                 case Stmt_If ifStmt:
                     OnIf?.Invoke(runtime, ifStmt);
