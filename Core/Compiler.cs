@@ -1,4 +1,4 @@
-namespace DS.Core
+/* namespace DS.Core
 {
     using Antlr4.Runtime;
     using Antlr4.Runtime.Misc;
@@ -565,4 +565,4 @@ namespace DS.Core
             return Expression.FString(fragments, embed);
         }
     }
-}
+} */

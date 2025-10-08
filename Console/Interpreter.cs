@@ -1,4 +1,4 @@
-namespace DS.Console
+/* namespace DS.Console
 {
     using System;
     using DS.Core;
@@ -86,4 +86,4 @@ namespace DS.Console
             }
         }
     }
-}
+} */
