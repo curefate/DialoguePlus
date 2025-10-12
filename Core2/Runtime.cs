@@ -1,33 +1,33 @@
-namespace DS.Core
+namespace Narratoria.Core
 {
     public class Runtime
     {
         public readonly VariableRegistry Variables = new();
         public readonly FunctionRegistry Functions = new();
 
-        private readonly Dictionary<string, LabelBlock> labelHub = [];
-        private readonly LinkedList<Statement> executionQueue = new();
+        private readonly Dictionary<string, LabelNode> labelHub = [];
+        private readonly LinkedList<ASTNode> executionQueue = new();
 
         public bool HasNext => executionQueue.Count > 0;
 
-        public void Read(LabelBlock block)
+        public void Read(LabelNode block)
         {
             if (block == null)
             {
-                throw new ArgumentNullException(nameof(block), "LabelBlock cannot be null");
+                throw new ArgumentNullException(nameof(block), "LabelNode cannot be null");
             }
-            if (labelHub.ContainsKey(block.LabelName))
+            if (labelHub.ContainsKey(block.Label))
             {
-                throw new InvalidOperationException($"Label '{block.LabelName}' already exists in the LabelHub.");
+                throw new InvalidOperationException($"Label '{block.Label}' already exists in the LabelHub.");
             }
-            labelHub[block.LabelName] = block;
+            labelHub[block.Label] = block;
         }
 
-        public void Read(Dictionary<string, LabelBlock> blocks)
+        public void Read(Dictionary<string, LabelNode> blocks)
         {
             if (blocks == null || blocks.Count == 0)
             {
-                throw new ArgumentException("The dictionary of LabelBlocks cannot be null or empty.", nameof(blocks));
+                throw new ArgumentException("The dictionary of LabelNodes cannot be null or empty.", nameof(blocks));
             }
             foreach (var block in blocks.Values)
             {
@@ -35,7 +35,7 @@ namespace DS.Core
             }
         }
 
-        public LabelBlock GetLabelBlock(string labelName)
+        public LabelNode GetLabelNode(string labelName)
         {
             if (string.IsNullOrEmpty(labelName))
             {
@@ -59,7 +59,7 @@ namespace DS.Core
                 throw new KeyNotFoundException($"Label '{LabelName}' not found in the LabelHub.");
             }
             executionQueue.Clear();
-            Enqueue(labelHub[LabelName].Instructions);
+            Enqueue(labelHub[LabelName].Nodes);
         }
 
         public void ClearLabels()
@@ -67,11 +67,11 @@ namespace DS.Core
             labelHub.Clear();
         }
 
-        public void Enqueue(Statement instruction, bool fromHead = false)
+        public void Enqueue(ASTNode instruction, bool fromHead = false)
         {
             if (instruction == null)
             {
-                throw new ArgumentNullException(nameof(instruction), "IRInstruction cannot be null");
+                throw new ArgumentNullException(nameof(instruction), "ASTNode cannot be null");
             }
             if (fromHead)
             {
@@ -83,11 +83,11 @@ namespace DS.Core
             }
         }
 
-        public void Enqueue(List<Statement> instructions, bool fromHead = false)
+        public void Enqueue(List<ASTNode> instructions, bool fromHead = false)
         {
             if (instructions == null || instructions.Count == 0)
             {
-                throw new ArgumentException("The list of IRInstructions cannot be null or empty.", nameof(instructions));
+                throw new ArgumentException("The list of ASTNodes cannot be null or empty.", nameof(instructions));
             }
             if (fromHead)
             {
@@ -105,7 +105,7 @@ namespace DS.Core
             }
         }
 
-        public Statement? LA(int offset = 0)
+        public ASTNode? LA(int offset = 0)
         {
             if (offset < 0 || offset >= executionQueue.Count)
             {
@@ -123,7 +123,7 @@ namespace DS.Core
             return node.Value;
         }
 
-        public Statement Pop()
+        public ASTNode Pop()
         {
             if (executionQueue.Count == 0)
             {

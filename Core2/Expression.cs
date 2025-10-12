@@ -1,14 +1,14 @@
-using System.Text;
-
-namespace DS.Core
+namespace Narratoria.Core
 {
+    using System.Text;
+
     public class Expression
     {
-        private DSExpressionNode _root;
+        private ExpressionNode _root;
 
-        public DSExpressionNode Root => _root;
+        public ExpressionNode Root => _root;
 
-        internal Expression(DSExpressionNode root)
+        internal Expression(ExpressionNode root)
         {
             _root = root ?? throw new ArgumentNullException(nameof(root), "Root node cannot be null.");
         }
@@ -48,8 +48,8 @@ namespace DS.Core
                 throw new ArgumentException("Function name cannot be null or empty.", nameof(functionName));
             }
             // *Disable null arguments to prevent issues with null nodes
-            var argNodes = arguments?.Select(arg => arg?._root).Where(node => node != null).Cast<DSExpressionNode>().ToList() ?? new List<DSExpressionNode>();
-            return new Expression(new CallNode(functionName, argNodes));
+            var argNodes = arguments?.Select(arg => arg?._root).Where(node => node != null).Cast<ExpressionNode>().ToList() ?? new List<ExpressionNode>();
+            return new Expression(new EmbedCallNode(functionName, argNodes));
         }
 
         public static Expression FString(List<string> fragments, List<Expression> embed)
@@ -57,7 +57,7 @@ namespace DS.Core
             if (fragments == null) throw new ArgumentNullException(nameof(fragments), "Fragments cannot be null.");
             if (embed == null) throw new ArgumentNullException(nameof(embed), "Embed expressions cannot be null.");
             // *Disable null arguments to prevent issues with null nodes
-            var embedNodes = embed.Select(e => e?._root).Where(node => node != null).Cast<DSExpressionNode>().ToList();
+            var embedNodes = embed.Select(e => e?._root).Where(node => node != null).Cast<ExpressionNode>().ToList();
             return new Expression(new FStringNode(fragments, embedNodes));
         }
 
@@ -172,14 +172,14 @@ namespace DS.Core
         }
     }
 
-    public abstract class DSExpressionNode
+    public abstract class ExpressionNode
     {
         public Type Type { get; protected set; } = typeof(void);
         public abstract override string ToString();
         public abstract object Evaluate(Runtime runtime);
     }
 
-    public class ConstantNode : DSExpressionNode
+    public class ConstantNode : ExpressionNode
     {
         public object Value { get; private set; }
 
@@ -216,7 +216,7 @@ namespace DS.Core
         }
     }
 
-    public class VariableNode : DSExpressionNode
+    public class VariableNode : ExpressionNode
     {
         public string VariableName { get; private set; }
 
@@ -243,12 +243,12 @@ namespace DS.Core
         }
     }
 
-    public class CallNode : DSExpressionNode
+    public class EmbedCallNode : ExpressionNode
     {
         public string FunctionName { get; private set; }
-        public List<DSExpressionNode> Arguments { get; private set; }
+        public List<ExpressionNode> Arguments { get; private set; }
 
-        internal CallNode(string functionName, List<DSExpressionNode> arguments)
+        internal EmbedCallNode(string functionName, List<ExpressionNode> arguments)
         {
             FunctionName = functionName ?? throw new ArgumentNullException(nameof(functionName), "Function name cannot be null.");
             Arguments = arguments;
@@ -277,14 +277,14 @@ namespace DS.Core
         }
     }
 
-    public class FStringNode : DSExpressionNode
+    public class FStringNode : ExpressionNode
     {
         public static readonly string EmbedSign = "{_0_}";
 
         public List<string> Fragments { get; private set; }
-        public List<DSExpressionNode> EmbedExpr { get; private set; }
+        public List<ExpressionNode> EmbedExpr { get; private set; }
 
-        internal FStringNode(List<string> fragments, List<DSExpressionNode> embedExprs)
+        internal FStringNode(List<string> fragments, List<ExpressionNode> embedExprs)
         {
             Fragments = fragments ?? throw new ArgumentNullException(nameof(fragments), "Fragments cannot be null.");
             EmbedExpr = embedExprs ?? throw new ArgumentNullException(nameof(embedExprs), "Embed cannot be null.");
@@ -350,12 +350,12 @@ namespace DS.Core
         }
     }
 
-    public class UnaryOperationNode : DSExpressionNode
+    public class UnaryOperationNode : ExpressionNode
     {
         public UnaryOperator Operator { get; private set; }
-        public DSExpressionNode Operand { get; private set; }
+        public ExpressionNode Operand { get; private set; }
 
-        internal UnaryOperationNode(UnaryOperator operatorSymbol, DSExpressionNode operand)
+        internal UnaryOperationNode(UnaryOperator operatorSymbol, ExpressionNode operand)
         {
             Operator = operatorSymbol;
             Operand = operand;
@@ -412,13 +412,13 @@ namespace DS.Core
         }
     }
 
-    public class BinaryOperationNode : DSExpressionNode
+    public class BinaryOperationNode : ExpressionNode
     {
         public BinaryOperator Operator { get; private set; }
-        public DSExpressionNode Left { get; private set; }
-        public DSExpressionNode Right { get; private set; }
+        public ExpressionNode Left { get; private set; }
+        public ExpressionNode Right { get; private set; }
 
-        internal BinaryOperationNode(BinaryOperator operatorSymbol, DSExpressionNode leftOperand, DSExpressionNode rightOperand)
+        internal BinaryOperationNode(BinaryOperator operatorSymbol, ExpressionNode leftOperand, ExpressionNode rightOperand)
         {
             Operator = operatorSymbol;
             Left = leftOperand;
