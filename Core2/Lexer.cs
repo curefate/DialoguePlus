@@ -6,7 +6,8 @@ namespace Narratoria.Core
     public class Lexer
     {
         // Source Stream
-        private readonly StreamReader inputStream;
+        private readonly StreamReader _inputStream;
+        public string Source { get; init; } = "<unknown>";
         private int _line = 0;
         private int _column = 1;
 
@@ -24,14 +25,11 @@ namespace Narratoria.Core
                 if (_modeStack.Peek() == TokenrizeMode.Fallback)
                 {
                     _modeStack.Pop();
-                    if (_modeStack.Count > 1)
-                    {
-                        _modeStack.Pop();
-                    }
-                    else
+                    if (_modeStack.Count == 0)
                     {
                         throw new Exception("Lexer mode stack underflow.");
                     }
+                    _modeStack.Pop();
                 }
                 return _modeStack.Peek();
             }
@@ -40,10 +38,10 @@ namespace Narratoria.Core
 
         public IEnumerable<Token> Tokenize()
         {
-            while (!inputStream.EndOfStream)
+            while (!_inputStream.EndOfStream)
             {
                 // Read new line
-                var line = inputStream.ReadLine() ?? "";
+                var line = _inputStream.ReadLine() ?? "";
                 _line++;
                 _column = 1;
                 if (string.IsNullOrEmpty(line)) continue;
@@ -168,13 +166,10 @@ namespace Narratoria.Core
             };
         }
 
-        public Lexer(StreamReader inputStream)
+        public Lexer(FileStream fileStream)
         {
-            this.inputStream = inputStream;
-        }
-        public Lexer(string path)
-        {
-            inputStream = new StreamReader(path);
+            this._inputStream = new StreamReader(fileStream);
+            Source = fileStream.Name;
         }
     }
 }

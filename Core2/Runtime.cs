@@ -6,7 +6,7 @@ namespace Narratoria.Core
         public readonly FunctionRegistry Functions = new();
 
         private readonly Dictionary<string, LabelNode> labelHub = [];
-        private readonly LinkedList<ASTNode> executionQueue = new();
+        private readonly LinkedList<SemanticNode> executionQueue = new();
 
         public bool HasNext => executionQueue.Count > 0;
 
@@ -16,11 +16,11 @@ namespace Narratoria.Core
             {
                 throw new ArgumentNullException(nameof(block), "LabelNode cannot be null");
             }
-            if (labelHub.ContainsKey(block.Label))
+            if (labelHub.ContainsKey(block.LabelName))
             {
-                throw new InvalidOperationException($"Label '{block.Label}' already exists in the LabelHub.");
+                throw new InvalidOperationException($"Label '{block.LabelName}' already exists in the LabelHub.");
             }
-            labelHub[block.Label] = block;
+            labelHub[block.LabelName] = block;
         }
 
         public void Read(Dictionary<string, LabelNode> blocks)
@@ -67,7 +67,7 @@ namespace Narratoria.Core
             labelHub.Clear();
         }
 
-        public void Enqueue(ASTNode instruction, bool fromHead = false)
+        public void Enqueue(SemanticNode instruction, bool fromHead = false)
         {
             if (instruction == null)
             {
@@ -83,7 +83,7 @@ namespace Narratoria.Core
             }
         }
 
-        public void Enqueue(List<ASTNode> instructions, bool fromHead = false)
+        public void Enqueue(List<SemanticNode> instructions, bool fromHead = false)
         {
             if (instructions == null || instructions.Count == 0)
             {
@@ -105,7 +105,7 @@ namespace Narratoria.Core
             }
         }
 
-        public ASTNode? LA(int offset = 0)
+        public SemanticNode? LA(int offset = 0)
         {
             if (offset < 0 || offset >= executionQueue.Count)
             {
@@ -123,7 +123,7 @@ namespace Narratoria.Core
             return node.Value;
         }
 
-        public ASTNode Pop()
+        public SemanticNode Pop()
         {
             if (executionQueue.Count == 0)
             {

@@ -1,34 +1,25 @@
 namespace Narratoria.Core
 {
-    public class AST
+    public class SemanticTree
     {
         public required string Source { get; init; }
-        public List<LabelNode> Nodes { get; } = [];
+        public List<LabelNode> Labels { get; } = [];
     }
 
-    public interface IASTVisitor<T>
-    {
-        T Visit(ASTNode node);
-    }
-
-    public abstract class ASTNode
+    public abstract class SemanticNode
     {
         public int Line { get; set; }
         public int Column { get; set; }
-        public virtual T Accept<T>(IASTVisitor<T> visitor)
-        {
-            return visitor.Visit(this);
-        }
     }
 
-    public class LabelNode : ASTNode
+    public class LabelNode : SemanticNode
     {
-        public required string Label { get; init; }
+        public required string LabelName { get; init; }
         public required string Source { get; init; }
-        public List<ASTNode> Nodes { get; } = [];
+        public List<SemanticNode> Nodes { get; } = [];
     }
 
-    public class DialogueNode : ASTNode
+    public class DialogueNode : SemanticNode
     {
         public string Speaker { get; init; } = string.Empty;
         public required FStringNode Text { get; init; }
@@ -40,10 +31,10 @@ namespace Narratoria.Core
         }
     }
 
-    public class MenuNode : ASTNode
+    public class MenuNode : SemanticNode
     {
         public List<FStringNode> Options { get; } = [];
-        public List<List<ASTNode>> Blocks { get; } = [];
+        public List<List<SemanticNode>> Blocks { get; } = [];
 
         public override string ToString()
         {
@@ -60,7 +51,7 @@ namespace Narratoria.Core
         }
     }
 
-    public class JumpNode : ASTNode
+    public class JumpNode : SemanticNode
     {
         public required string Target { get; init; }
 
@@ -70,7 +61,7 @@ namespace Narratoria.Core
         }
     }
 
-    public class TourNode : ASTNode
+    public class TourNode : SemanticNode
     {
         public required string Target { get; init; }
 
@@ -80,7 +71,7 @@ namespace Narratoria.Core
         }
     }
 
-    public class CallNode : ASTNode
+    public class CallNode : SemanticNode
     {
         public required string FunctionName { get; init; }
         public List<Expression> Arguments { get; } = [];
@@ -91,7 +82,7 @@ namespace Narratoria.Core
         }
     }
 
-    public class AssignNode : ASTNode
+    public class AssignNode : SemanticNode
     {
         public required Expression Expression { get; init; }
 
@@ -101,11 +92,11 @@ namespace Narratoria.Core
         }
     }
 
-    public class IfNode : ASTNode
+    public class IfNode : SemanticNode
     {
         public required Expression Condition { get; init; }
-        public List<ASTNode> ThenBlock { get; } = [];
-        public List<ASTNode> ElseBlock { get; } = [];
+        public List<SemanticNode> ThenBlock { get; } = [];
+        public List<SemanticNode> ElseBlock { get; } = [];
 
         public override string ToString()
         {
