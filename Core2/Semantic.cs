@@ -3,7 +3,7 @@ namespace Narratoria.Core
     public class SemanticTree
     {
         public required string Source { get; init; }
-        public List<LabelNode> Labels { get; } = [];
+        public List<SemanticLabel> Labels { get; } = [];
     }
 
     public abstract class SemanticNode
@@ -12,14 +12,14 @@ namespace Narratoria.Core
         public int Column { get; set; }
     }
 
-    public class LabelNode : SemanticNode
+    public class SemanticLabel : SemanticNode
     {
         public required string LabelName { get; init; }
         public required string Source { get; init; }
         public List<SemanticNode> Nodes { get; } = [];
     }
 
-    public class DialogueNode : SemanticNode
+    public class SemanticDialogue : SemanticNode
     {
         public string Speaker { get; init; } = string.Empty;
         public required FStringNode Text { get; init; }
@@ -31,7 +31,7 @@ namespace Narratoria.Core
         }
     }
 
-    public class MenuNode : SemanticNode
+    public class SemanticMenu : SemanticNode
     {
         public List<FStringNode> Options { get; } = [];
         public List<List<SemanticNode>> Blocks { get; } = [];
@@ -51,7 +51,7 @@ namespace Narratoria.Core
         }
     }
 
-    public class JumpNode : SemanticNode
+    public class SemanticJump : SemanticNode
     {
         public required string Target { get; init; }
 
@@ -61,7 +61,7 @@ namespace Narratoria.Core
         }
     }
 
-    public class TourNode : SemanticNode
+    public class SemanticTour : SemanticNode
     {
         public required string Target { get; init; }
 
@@ -71,7 +71,7 @@ namespace Narratoria.Core
         }
     }
 
-    public class CallNode : SemanticNode
+    public class SemanticCall : SemanticNode
     {
         public required string FunctionName { get; init; }
         public List<Expression> Arguments { get; } = [];
@@ -82,7 +82,7 @@ namespace Narratoria.Core
         }
     }
 
-    public class AssignNode : SemanticNode
+    public class SemanticAssign : SemanticNode
     {
         public required Expression Expression { get; init; }
 
@@ -92,7 +92,7 @@ namespace Narratoria.Core
         }
     }
 
-    public class IfNode : SemanticNode
+    public class SemanticIf : SemanticNode
     {
         public required Expression Condition { get; init; }
         public List<SemanticNode> ThenBlock { get; } = [];

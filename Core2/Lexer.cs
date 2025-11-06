@@ -171,5 +171,12 @@ namespace Narratoria.Core
             this._inputStream = new StreamReader(fileStream);
             Source = fileStream.Name;
         }
+
+        public Lexer(string filePath)
+        {
+            var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+            this._inputStream = new StreamReader(fileStream);
+            Source = filePath;
+        }
     }
 }

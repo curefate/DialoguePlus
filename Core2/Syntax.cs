@@ -1,6 +1,4 @@
 
-// ========== Syntax AST Definitions ==========
-
 namespace Narratoria.Core
 {
     public abstract class SyntaxNode
@@ -12,9 +10,9 @@ namespace Narratoria.Core
 
     public class SyntaxProgram : SyntaxNode
     {
-        public List<SyntaxImport> Imports { get; } = new();
-        public List<SyntaxStatement> TopLevelStatements { get; } = new();
-        public List<SyntaxLabelBlock> Labels { get; } = new();
+        public List<SyntaxImport> Imports { get; } = [];
+        public List<SyntaxStatement> TopLevelStatements { get; } = [];
+        public List<SyntaxLabelBlock> Labels { get; } = [];
         public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitProgram(this);
     }
 

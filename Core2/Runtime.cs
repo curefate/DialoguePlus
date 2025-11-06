@@ -5,12 +5,12 @@ namespace Narratoria.Core
         public readonly VariableRegistry Variables = new();
         public readonly FunctionRegistry Functions = new();
 
-        private readonly Dictionary<string, LabelNode> labelHub = [];
+        private readonly Dictionary<string, SemanticLabel> labelHub = [];
         private readonly LinkedList<SemanticNode> executionQueue = new();
 
         public bool HasNext => executionQueue.Count > 0;
 
-        public void Read(LabelNode block)
+        public void Read(SemanticLabel block)
         {
             if (block == null)
             {
@@ -23,7 +23,7 @@ namespace Narratoria.Core
             labelHub[block.LabelName] = block;
         }
 
-        public void Read(Dictionary<string, LabelNode> blocks)
+        public void Read(Dictionary<string, SemanticLabel> blocks)
         {
             if (blocks == null || blocks.Count == 0)
             {
@@ -35,7 +35,7 @@ namespace Narratoria.Core
             }
         }
 
-        public LabelNode GetLabelNode(string labelName)
+        public SemanticLabel GetLabelNode(string labelName)
         {
             if (string.IsNullOrEmpty(labelName))
             {
