@@ -157,6 +157,22 @@ namespace Narratoria.Core
                 }
             }
 
+            if (CurrentMode == TokenrizeMode.Default)
+            {
+                // Emit remaining dedents
+                while (_indentStack.Count > 0)
+                {
+                    _indentStack.Pop();
+                    yield return new Token
+                    {
+                        Type = TokenType.Dedent,
+                        Text = "",
+                        Line = _line,
+                        Column = _column
+                    };
+                }
+            }
+
             yield return new Token
             {
                 Type = TokenType.EOF,

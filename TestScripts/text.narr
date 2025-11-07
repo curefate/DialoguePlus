@@ -28,3 +28,10 @@ $b = 1
 "{$A.hello}! Don't {"forget"} you can embed function in dialogue! Like this! {call Add($A.a, $b)}"
 call Print($A.hello)
 
+label C:
+    guider "How are you?"
+    "Good":
+        "I'm good."
+    "Bad":
+        "I'm baaaaaaaaad!"
+
