@@ -23,7 +23,7 @@ namespace Narratoria.Core
     {
         public string Speaker { get; init; } = string.Empty;
         public required FStringNode Text { get; init; }
-        public List<string> Tags { get; } = [];
+        // public List<string> Tags { get; } = [];
 
         public override string ToString()
         {

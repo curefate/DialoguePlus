@@ -25,7 +25,7 @@ namespace Narratoria.Core
     public class SyntaxLabelBlock : SyntaxNode
     {
         public required string LabelName { get; init; }
-        public List<SyntaxStatement> Statements { get; } = new();
+        public List<SyntaxStatement> Statements { get; } = [];
         public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitLabelBlock(this);
     }
 
@@ -35,20 +35,20 @@ namespace Narratoria.Core
     {
         public string? Speaker { get; init; }
         public required SyntaxFString Text { get; init; }
-        public List<string> Tags { get; } = new();
+        // public List<string> Tags { get; } = [];
         public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitDialogue(this);
     }
 
     public class SyntaxMenu : SyntaxStatement
     {
-        public List<SyntaxMenuItem> Items { get; } = new();
+        public List<SyntaxMenuItem> Items { get; } = [];
         public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitMenu(this);
     }
 
     public class SyntaxMenuItem : SyntaxNode
     {
         public required SyntaxFString Text { get; init; }
-        public List<SyntaxStatement> Body { get; } = new();
+        public List<SyntaxStatement> Body { get; } = [];
         public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitMenuItem(this);
     }
 
@@ -67,7 +67,7 @@ namespace Narratoria.Core
     public class SyntaxCall : SyntaxStatement
     {
         public required string FunctionName { get; init; }
-        public List<SyntaxExpression> Arguments { get; } = new();
+        public List<SyntaxExpression> Arguments { get; } = [];
         public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitCall(this);
     }
 
@@ -81,8 +81,8 @@ namespace Narratoria.Core
 
     public class SyntaxIf : SyntaxStatement
     {
-        public List<SyntaxExpression> Conditions { get; } = new();
-        public List<List<SyntaxStatement>> Blocks { get; } = new();
+        public required SyntaxExpression Condition { get; init; }
+        public List<SyntaxStatement> ThenBlock { get; } = [];
         public List<SyntaxStatement>? ElseBlock { get; set; }
         public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitIf(this);
     }
@@ -118,15 +118,15 @@ namespace Narratoria.Core
 
     public class SyntaxFString : SyntaxExpression
     {
-        public List<string> Fragments { get; } = new();
-        public List<SyntaxExpression> Embedded { get; } = new();
+        public List<string> Fragments { get; } = [];
+        public List<SyntaxExpression> Embedded { get; } = [];
         public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitFString(this);
     }
 
     public class SyntaxFunctionCall : SyntaxExpression
     {
         public required string FunctionName { get; init; }
-        public List<SyntaxExpression> Arguments { get; } = new();
+        public List<SyntaxExpression> Arguments { get; } = [];
         public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitFunctionCall(this);
     }
 
