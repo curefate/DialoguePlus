@@ -257,7 +257,7 @@ namespace Narratoria.Core
                 Column = callToken.Column
             };
 
-            if (!Match(TokenType.RParen))
+            if (!Match(TokenType.RParen) && !Match(TokenType.Linebreak))
             {
                 do
                 {
@@ -273,11 +273,11 @@ namespace Narratoria.Core
         private SyntaxAssign ParseAssign()
         {
             var variableToken = Expect(TokenType.Variable, "Expected variable.");
-            TokenType[] assignTypes = new TokenType[]
-            {
+            TokenType[] assignTypes =
+            [
                 TokenType.Assign, TokenType.PlusAssign, TokenType.MinusAssign,
                 TokenType.MultiplyAssign, TokenType.DivideAssign, TokenType.ModuloAssign, TokenType.PowerAssign
-            };
+            ];
             var assignToken = Expect(assignTypes);
             var expression = ParseExpression();
             Expect(TokenType.Linebreak, "Expected newline after assignment.");
@@ -374,27 +374,89 @@ namespace Narratoria.Core
 
         private SyntaxUnaryExpr ParseUnaryExpr()
         {
+            var operatorToken = Expect(TokenType.Plus, TokenType.Minus, TokenType.Not);
+            var operand = ParsePrimaryExpr();
+            return new SyntaxUnaryExpr
+            {
+                Operator = operatorToken.Text,
+                Operand = operand,
+                Line = operatorToken.Line,
+                Column = operatorToken.Column
+            };
+        }
+
+        private SyntaxExpression ParsePrimaryExpr()
+        {
             throw new NotImplementedException();
         }
 
         private SyntaxLiteral ParseLiteral()
         {
-            throw new NotImplementedException();
+            var literalToken = Expect(TokenType.Number, TokenType.Boolean);
+            return new SyntaxLiteral
+            {
+                Value = literalToken.Text,
+                Line = literalToken.Line,
+                Column = literalToken.Column
+            };
         }
 
         private SyntaxVariable ParseVariable()
         {
-            throw new NotImplementedException();
+            var variableToken = Expect(TokenType.Variable, "Expected variable.");
+            return new SyntaxVariable
+            {
+                Name = variableToken.Text,
+                Line = variableToken.Line,
+                Column = variableToken.Column
+            };
         }
 
         private SyntaxFString ParseFString()
         {
-            throw new NotImplementedException();
+            Expect(TokenType.Fstring_Quote, "Expected '\"' to start f-string.");
+            var fstring = new SyntaxFString
+            {
+                Line = Current.Line,
+                Column = Current.Column
+            };
+            while (!Match(TokenType.Fstring_Quote, TokenType.EOF))
+            {
+                if (Match(TokenType.Fstring_Content))
+                {
+                    var contentToken = Consume();
+                    fstring.Fragments.Add(contentToken.Text);
+                }
+                else if (Match(TokenType.Fstring_Escape))
+                {
+                    var escapeToken = Consume();
+                    fstring.Fragments.Add(escapeToken.Text);
+                }
+                else if (Match(TokenType.LBrace))
+                {
+                    fstring.Embedded.Add(ParseEmbedCall());
+                }
+                else
+                {
+                    throw new Exception($"Unexpected token {Current.Type} in f-string at line {Current.Line}, column {Current.Column}.");
+                }
+
+            }
+            Expect(TokenType.Fstring_Quote, "Expected '\"' to end f-string.");
+            return fstring;
         }
 
-        private SyntaxFunctionCall ParseFunctionCall()
+        private SyntaxEmbedCall ParseEmbedCall()
         {
-            throw new NotImplementedException();
+            Expect(TokenType.LBrace, "Expected '{' to start embedded expression.");
+            var call = ParseCall();
+            Expect(TokenType.RBrace, "Expected '}' to end embedded expression.");
+            return new SyntaxEmbedCall
+            {
+                Call = call,
+                Line = call.Line,
+                Column = call.Column
+            };
         }
     }
 }

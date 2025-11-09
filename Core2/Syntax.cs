@@ -106,7 +106,7 @@ namespace Narratoria.Core
 
     public class SyntaxLiteral : SyntaxExpression
     {
-        public required object Value { get; init; }
+        public required string Value { get; init; }
         public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitLiteral(this);
     }
 
@@ -123,10 +123,9 @@ namespace Narratoria.Core
         public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitFString(this);
     }
 
-    public class SyntaxFunctionCall : SyntaxExpression
+    public class SyntaxEmbedCall : SyntaxExpression
     {
-        public required string FunctionName { get; init; }
-        public List<SyntaxExpression> Arguments { get; } = [];
+        public required SyntaxCall Call { get; init; }
         public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitFunctionCall(this);
     }
 
@@ -151,6 +150,6 @@ namespace Narratoria.Core
         T VisitLiteral(SyntaxLiteral node);
         T VisitVariable(SyntaxVariable node);
         T VisitFString(SyntaxFString node);
-        T VisitFunctionCall(SyntaxFunctionCall node);
+        T VisitFunctionCall(SyntaxEmbedCall node);
     }
 }
