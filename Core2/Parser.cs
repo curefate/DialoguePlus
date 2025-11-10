@@ -79,7 +79,7 @@ namespace Narratoria.Core
 
             return new SyntaxImport
             {
-                Path = pathToken.Text,
+                Path = pathToken,
                 Line = importToken.Line,
                 Column = importToken.Column
             };
@@ -95,7 +95,7 @@ namespace Narratoria.Core
 
             var block = new SyntaxLabelBlock
             {
-                LabelName = nameToken.Text,
+                LabelName = nameToken,
                 Line = labelToken.Line,
                 Column = labelToken.Column
             };
@@ -153,10 +153,10 @@ namespace Narratoria.Core
 
         private SyntaxDialogue ParseDialogue()
         {
-            string? speaker = null;
+            Token? speaker = null;
             if (Match(TokenType.Identifier))
             {
-                speaker = Consume().Text;
+                speaker = Consume();
             }
             var text = ParseFString();
             Expect(TokenType.Linebreak, "Expected newline after dialogue.");
@@ -225,7 +225,7 @@ namespace Narratoria.Core
             Expect(TokenType.Linebreak, "Expected newline after jump statement.");
             return new SyntaxJump
             {
-                TargetLabel = targetToken.Text,
+                TargetLabel = targetToken,
                 Line = jumpToken.Line,
                 Column = jumpToken.Column
             };
@@ -238,7 +238,7 @@ namespace Narratoria.Core
             Expect(TokenType.Linebreak, "Expected newline after tour statement.");
             return new SyntaxTour
             {
-                TargetLabel = targetToken.Text,
+                TargetLabel = targetToken,
                 Line = tourToken.Line,
                 Column = tourToken.Column
             };
@@ -252,7 +252,7 @@ namespace Narratoria.Core
 
             var call = new SyntaxCall
             {
-                FunctionName = functionNameToken.Text,
+                FunctionName = functionNameToken,
                 Line = callToken.Line,
                 Column = callToken.Column
             };
@@ -279,13 +279,13 @@ namespace Narratoria.Core
                 TokenType.MultiplyAssign, TokenType.DivideAssign, TokenType.ModuloAssign, TokenType.PowerAssign
             ];
             var assignToken = Expect(assignTypes);
-            var expression = ParseExpression();
+            var value = ParseExpression();
             Expect(TokenType.Linebreak, "Expected newline after assignment.");
             return new SyntaxAssign
             {
-                VariableName = variableToken.Text,
-                Operator = assignToken.Text,
-                Value = expression,
+                VariableName = variableToken,
+                Operator = assignToken,
+                Value = value,
                 Line = variableToken.Line,
                 Column = variableToken.Column
             };
@@ -364,52 +364,215 @@ namespace Narratoria.Core
 
         private SyntaxExpression ParseExpression()
         {
-            throw new NotImplementedException();
+            return ParseOr();
         }
 
-        private SyntaxBinaryExpr ParseBinaryExpr(int parentPrecedence = 0)
+        private SyntaxExprOr ParseOr()
         {
-            throw new NotImplementedException();
-        }
-
-        private SyntaxUnaryExpr ParseUnaryExpr()
-        {
-            var operatorToken = Expect(TokenType.Plus, TokenType.Minus, TokenType.Not);
-            var operand = ParsePrimaryExpr();
-            return new SyntaxUnaryExpr
+            var left = ParseAnd();
+            var node = new SyntaxExprOr
             {
-                Operator = operatorToken.Text,
-                Operand = operand,
-                Line = operatorToken.Line,
-                Column = operatorToken.Column
+                Left = left,
+                Line = left.Line,
+                Column = left.Column
+            };
+
+            while (Match(TokenType.Or))
+            {
+                var operatorToken = Consume();
+                var right = ParseAnd();
+                node.Rights.Add((operatorToken, right));
+            }
+
+            return node;
+        }
+
+        private SyntaxExprAnd ParseAnd()
+        {
+            var left = ParseEquality();
+            var node = new SyntaxExprAnd
+            {
+                Left = left,
+                Line = left.Line,
+                Column = left.Column
+            };
+
+            while (Match(TokenType.And))
+            {
+                var operatorToken = Consume();
+                var right = ParseEquality();
+                node.Rights.Add((operatorToken, right));
+            }
+
+            return node;
+        }
+
+        private SyntaxExprEquality ParseEquality()
+        {
+            var left = ParseComparison();
+            if (Match(TokenType.Equal, TokenType.NotEqual))
+            {
+                var operatorToken = Consume();
+                var right = ParseComparison();
+                return new SyntaxExprEquality
+                {
+                    Left = left,
+                    Operator = operatorToken,
+                    Right = right,
+                    Line = left.Line,
+                    Column = left.Column
+                };
+            }
+            else
+            {
+                return new SyntaxExprEquality
+                {
+                    Left = left,
+                    Operator = null!,
+                    Right = null!,
+                    Line = left.Line,
+                    Column = left.Column
+                };
+            }
+        }
+
+        private SyntaxExprComparison ParseComparison()
+        {
+            var left = ParseAdditive();
+            if (Match(TokenType.Less, TokenType.Greater, TokenType.LessEqual, TokenType.GreaterEqual))
+            {
+                var operatorToken = Consume();
+                var right = ParseAdditive();
+                return new SyntaxExprComparison
+                {
+                    Left = left,
+                    Operator = operatorToken,
+                    Right = right,
+                    Line = left.Line,
+                    Column = left.Column
+                };
+            }
+            else
+            {
+                return new SyntaxExprComparison
+                {
+                    Left = left,
+                    Operator = null!,
+                    Right = null!,
+                    Line = left.Line,
+                    Column = left.Column
+                };
+            }
+        }
+
+        private SyntaxExprAdditive ParseAdditive()
+        {
+            var left = ParseMultiplicative();
+            var node = new SyntaxExprAdditive
+            {
+                Left = left,
+                Line = left.Line,
+                Column = left.Column
+            };
+
+            while (Match(TokenType.Plus, TokenType.Minus))
+            {
+                var operatorToken = Consume();
+                var right = ParseMultiplicative();
+                node.Rights.Add((operatorToken, right));
+            }
+
+            return node;
+        }
+
+        private SyntaxExprMultiplicative ParseMultiplicative()
+        {
+            var left = ParsePower();
+            var node = new SyntaxExprMultiplicative
+            {
+                Left = left,
+                Line = left.Line,
+                Column = left.Column
+            };
+
+            while (Match(TokenType.Multiply, TokenType.Divide, TokenType.Modulo))
+            {
+                var operatorToken = Consume();
+                var right = ParsePower();
+                node.Rights.Add((operatorToken, right));
+            }
+
+            return node;
+        }
+
+        private SyntaxExprPower ParsePower()
+        {
+            var baseExpr = ParseUnary();
+            SyntaxExprPower node = new()
+            {
+                Base = baseExpr,
+                Line = baseExpr.Line,
+                Column = baseExpr.Column
+            };
+            while (Match(TokenType.Power))
+            {
+                Expect(TokenType.Power, "Expected '^' operator.");
+                var exponent = ParseUnary();
+                node.Exponents.Add(exponent);
+            }
+            return node;
+        }
+
+        private SyntaxExprUnary ParseUnary()
+        {
+            Token? operatorToken = null;
+            if (Match(TokenType.Not, TokenType.Minus, TokenType.Plus))
+            {
+                operatorToken = Consume();
+            }
+            var primary = ParsePrimary();
+            return new SyntaxExprUnary
+            {
+                Operator = operatorToken,
+                Primary = primary,
+                Line = operatorToken?.Line ?? primary.Line,
+                Column = operatorToken?.Column ?? primary.Column
             };
         }
 
-        private SyntaxExpression ParsePrimaryExpr()
+        private SyntaxExprPrimary ParsePrimary()
         {
-            throw new NotImplementedException();
-        }
-
-        private SyntaxLiteral ParseLiteral()
-        {
-            var literalToken = Expect(TokenType.Number, TokenType.Boolean);
-            return new SyntaxLiteral
+            if (Match(TokenType.Number, TokenType.Boolean, TokenType.Variable))
             {
-                Value = literalToken.Text,
-                Line = literalToken.Line,
-                Column = literalToken.Column
-            };
-        }
-
-        private SyntaxVariable ParseVariable()
-        {
-            var variableToken = Expect(TokenType.Variable, "Expected variable.");
-            return new SyntaxVariable
+                var literalToken = Consume();
+                return new SyntaxLiteral
+                {
+                    Value = literalToken,
+                    Line = literalToken.Line,
+                    Column = literalToken.Column
+                };
+            }
+            if (Match(TokenType.Fstring_Quote))
             {
-                Name = variableToken.Text,
-                Line = variableToken.Line,
-                Column = variableToken.Column
-            };
+                return ParseFString();
+            }
+            if (Match(TokenType.LBrace))
+            {
+                return ParseEmbedCall();
+            }
+            if (Match(TokenType.LParen))
+            {
+                Expect(TokenType.LParen, "Expected '(' to start expression.");
+                var expr = ParseExpression();
+                Expect(TokenType.RParen, "Expected ')' to end expression.");
+                return new SyntaxEmbedExpr
+                {
+                    Expression = expr,
+                    Line = expr.Line,
+                    Column = expr.Column
+                };
+            }
+            throw new Exception($"Unexpected token {Current.Type} at line {Current.Line}, column {Current.Column}.");
         }
 
         private SyntaxFString ParseFString()
@@ -422,19 +585,14 @@ namespace Narratoria.Core
             };
             while (!Match(TokenType.Fstring_Quote, TokenType.EOF))
             {
-                if (Match(TokenType.Fstring_Content))
+                if (Match(TokenType.Fstring_Content, TokenType.Fstring_Escape))
                 {
-                    var contentToken = Consume();
-                    fstring.Fragments.Add(contentToken.Text);
-                }
-                else if (Match(TokenType.Fstring_Escape))
-                {
-                    var escapeToken = Consume();
-                    fstring.Fragments.Add(escapeToken.Text);
+                    var strToken = Consume();
+                    fstring.Fragments.Add(strToken);
                 }
                 else if (Match(TokenType.LBrace))
                 {
-                    fstring.Embedded.Add(ParseEmbedCall());
+                    fstring.Embedded.Enqueue((ParseEmbedCall(), fstring.Fragments.Count));
                 }
                 else
                 {

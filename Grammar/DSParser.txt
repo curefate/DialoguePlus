@@ -127,3 +127,59 @@ string_fragment
 condition
     : NOT? expression
     ;
+
+
+
+
+expression
+    : expr_conditional
+    ;
+
+expr_conditional
+    : expr_or ('?' expression ':' expression)?   // 预留三元运算符
+    ;
+
+expr_or
+    : expr_and (OR expr_and)*
+    ;
+
+expr_and
+    : expr_equality (AND expr_equality)*
+    ;
+
+expr_equality
+    : expr_comparison ((EQEQUAL | NOTEQUAL) expr_comparison)*
+    ;
+
+expr_comparison
+    : expr_additive ((GREATER | LESS | GREATEREQUAL | LESSEQUAL) expr_additive)*
+    ;
+
+expr_additive
+    : expr_multiplicative ((PLUS | MINUS) expr_multiplicative)*
+    ;
+
+expr_multiplicative
+    : expr_power ((STAR | SLASH | PERCENT) expr_power)*
+    ;
+
+expr_power
+    : expr_unary (POWER expr_power)?   // 幂运算，右结合
+    ;
+
+expr_unary
+    : unary_op* expr_primary
+    ;
+
+unary_op
+    : PLUS | MINUS | EXCLAMATION
+    ;
+
+expr_primary
+    : VARIABLE
+    | NUMBER
+    | BOOL
+    | fstring
+    | LPAR expression RPAR
+    | embedded_call
+    ;
