@@ -33,14 +33,6 @@ namespace Narratoria.Core
             new LexicalDefinition(TokenType.Else, "\\belse\\b"),
             new LexicalDefinition(TokenType.Elif, "\\belif\\b"),
 
-            // Literals
-            new LexicalDefinition(TokenType.Identifier, "[a-zA-Z_][a-zA-Z0-9_]*"),
-            new LexicalDefinition(TokenType.Number, "-?\\d+(\\.\\d+)?"),
-            new LexicalDefinition(TokenType.Boolean, "\\b(true|false)\\b"),
-            new LexicalDefinition(TokenType.Variable, "\\$[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)?"),
-            // Fstring
-            new LexicalDefinition(TokenType.Fstring_Quote, "\"", TokenrizeMode.Fstring),
-
             // Operators
             // Math
             new LexicalDefinition(TokenType.Plus, "\\+"),
@@ -75,12 +67,20 @@ namespace Narratoria.Core
             new LexicalDefinition(TokenType.RParen, "\\)"),
             new LexicalDefinition(TokenType.LBrace, "\\{"),
             new LexicalDefinition(TokenType.RBrace, "\\}"),
+
+            // Literals
+            new LexicalDefinition(TokenType.Identifier, "[a-zA-Z_][a-zA-Z0-9_]*"),
+            new LexicalDefinition(TokenType.Number, "-?\\d+(\\.\\d+)?"),
+            new LexicalDefinition(TokenType.Boolean, "\\b(true|false)\\b"),
+            new LexicalDefinition(TokenType.Variable, "\\$[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)?"),
+            // Fstring
+            new LexicalDefinition(TokenType.Fstring_Quote, "\"", TokenrizeMode.Fstring),
         ];
 
         private static readonly List<LexicalDefinition> pattern_fstring =
         [
             new LexicalDefinition(TokenType.LBrace, "\\{", TokenrizeMode.Embed),
-            new LexicalDefinition(TokenType.Linebreak, "\\r?\\n", null, true),
+            new LexicalDefinition(TokenType.Linebreak, "\\r?\\n", TokenrizeMode.Fallback),
             new LexicalDefinition(TokenType.Fstring_Quote, "\"", TokenrizeMode.Fallback),
             new LexicalDefinition(TokenType.Fstring_Escape, "\\\\[\"\\\\nrt]|\\{\\{|\\}\\}"),
             new LexicalDefinition(TokenType.Fstring_Content, "[^\"\\\\\\{\\r\\n]+"),
@@ -100,14 +100,6 @@ namespace Narratoria.Core
 
             // Keywords
             new LexicalDefinition(TokenType.Call, "\\bcall\\b"),
-
-            // Literals
-            new LexicalDefinition(TokenType.Identifier, "[a-zA-Z_][a-zA-Z0-9_]*"),
-            new LexicalDefinition(TokenType.Number, "-?\\d+(\\.\\d+)?"),
-            new LexicalDefinition(TokenType.Boolean, "\\b(true|false)\\b"),
-            new LexicalDefinition(TokenType.Variable, "\\$[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)?"),
-            // Fstring
-            new LexicalDefinition(TokenType.Fstring_Quote, "\"", TokenrizeMode.Fstring),
 
             // Operators
             // Math
@@ -133,6 +125,14 @@ namespace Narratoria.Core
             new LexicalDefinition(TokenType.LParen, "\\("),
             new LexicalDefinition(TokenType.RParen, "\\)"),
             new LexicalDefinition(TokenType.RBrace, "\\}", TokenrizeMode.Fallback),
+
+            // Literals
+            new LexicalDefinition(TokenType.Identifier, "[a-zA-Z_][a-zA-Z0-9_]*"),
+            new LexicalDefinition(TokenType.Number, "-?\\d+(\\.\\d+)?"),
+            new LexicalDefinition(TokenType.Boolean, "\\b(true|false)\\b"),
+            new LexicalDefinition(TokenType.Variable, "\\$[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)?"),
+            // Fstring
+            new LexicalDefinition(TokenType.Fstring_Quote, "\"", TokenrizeMode.Fstring),
         ];
 
         public static readonly Dictionary<TokenrizeMode, List<LexicalDefinition>> PatternsMap = new()

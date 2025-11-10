@@ -29,7 +29,7 @@ namespace Narratoria.Core
             throw new Exception($"Expected one of [{string.Join(", ", types)}] but found {Current.Type} at line {Current.Line}, column {Current.Column}.");
         }
 
-        public SyntaxProgram ParseProgram()
+        public SyntaxProgram Parse()
         {
             var program = new SyntaxProgram();
 
@@ -592,7 +592,7 @@ namespace Narratoria.Core
                 }
                 else if (Match(TokenType.LBrace))
                 {
-                    fstring.Embedded.Enqueue((ParseEmbedCall(), fstring.Fragments.Count));
+                    fstring.Embedded.Enqueue((ParseExpression(), fstring.Fragments.Count));
                 }
                 else
                 {

@@ -204,4 +204,33 @@ namespace Narratoria.Core
         T VisitEmbedCall(SyntaxEmbedCall node);
         T VisitEmbedExpr(SyntaxEmbedExpr node);
     }
+
+    public abstract class SyntaxVisitorBase<T> : ISyntaxVisitor<T>
+    {
+        public virtual T VisitProgram(SyntaxProgram node) => default!;
+        public virtual T VisitImport(SyntaxImport node) => default!;
+        public virtual T VisitLabelBlock(SyntaxLabelBlock node) => default!;
+        public virtual T VisitDialogue(SyntaxDialogue node) => default!;
+        public virtual T VisitMenu(SyntaxMenu node) => default!;
+        public virtual T VisitMenuItem(SyntaxMenuItem node) => default!;
+        public virtual T VisitJump(SyntaxJump node) => default!;
+        public virtual T VisitTour(SyntaxTour node) => default!;
+        public virtual T VisitCall(SyntaxCall node) => default!;
+        public virtual T VisitAssign(SyntaxAssign node) => default!;
+        public virtual T VisitIf(SyntaxIf node) => default!;
+
+        public virtual T VisitExprOr(SyntaxExprOr node) => default!;
+        public virtual T VisitExprAnd(SyntaxExprAnd node) => default!;
+        public virtual T VisitExprEquality(SyntaxExprEquality node) => default!;
+        public virtual T VisitExprComparison(SyntaxExprComparison node) => default!;
+        public virtual T VisitExprAdditive(SyntaxExprAdditive node) => default!;
+        public virtual T VisitExprMultiplicative(SyntaxExprMultiplicative node) => default!;
+        public virtual T VisitExprPower(SyntaxExprPower node) => default!;
+        public virtual T VisitExprUnary(SyntaxExprUnary node) => default!;
+
+        public virtual T VisitLiteral(SyntaxLiteral node) => default!;
+        public virtual T VisitFString(SyntaxFString node) => default!;
+        public virtual T VisitEmbedCall(SyntaxEmbedCall node) => default!;
+        public virtual T VisitEmbedExpr(SyntaxEmbedExpr node) => default!;
+    }
 }
