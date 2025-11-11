@@ -5,17 +5,26 @@ public class Program
     public static void Main(string[] args)
     {
         var lexer = new Lexer("../../../TestScripts/text.narr");
-        Console.WriteLine("========================================================");
-        Console.WriteLine("Tokens:");
-        foreach (var token in lexer.Tokenize())
+        var tokens = new List<Token>(lexer.Tokenize());
+        Console.WriteLine("========================== Tokens ==========================");
+        foreach (var token in tokens)
         {
             Console.WriteLine(token);
         }
-        var parser = new Parser(lexer.Tokenize());
+        var parser = new Parser(tokens);
         var program = parser.Parse();
-        Console.WriteLine("========================================================");
-        Console.WriteLine("Parsed Syntax Tree:");
-        Console.WriteLine(program);
-        Console.Error.WriteLine("test error output");
+        Console.WriteLine("======================== AST =====================");
+        foreach (var import in program.Imports)
+        {
+            Console.WriteLine($"Import: {import.Path.Text}");
+        }
+        foreach (var stmt in program.TopLevelStatements)
+        {
+            Console.WriteLine($"Top Level Statement: {stmt}");
+        }
+        foreach (var label in program.Labels)
+        {
+            Console.WriteLine($"Label: {label.LabelName.Text}, Statements: {label.Statements.Count}");
+        }
     }
 }

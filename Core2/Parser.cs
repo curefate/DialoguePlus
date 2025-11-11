@@ -7,7 +7,12 @@ namespace Narratoria.Core
 
         public Parser(IEnumerable<Token> tokens)
         {
-            _tokens = new List<Token>(tokens);
+            _tokens = [.. tokens];
+        }
+
+        public Parser(List<Token> tokens)
+        {
+            _tokens = tokens;
         }
 
         private Token Current => _position < _tokens.Count ? _tokens[_position] : _tokens[^1];
@@ -53,7 +58,9 @@ namespace Narratoria.Core
                 }
                 catch (Exception ex)
                 {
+                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.Error.WriteLine($"[Parser Error] {ex.Message}");
+                    Console.ResetColor();
 
                     // 错误恢复：跳过直到下一个语句起始或同步点
                     while (!Match(TokenType.EOF, TokenType.Linebreak, TokenType.Label, TokenType.Jump, TokenType.Tour, TokenType.Call, TokenType.If, TokenType.Variable))
@@ -558,7 +565,22 @@ namespace Narratoria.Core
             }
             if (Match(TokenType.LBrace))
             {
-                return ParseEmbedCall();
+                if (Peek(1).Type == TokenType.Call)
+                {
+                    return ParseEmbedCall();
+                }
+                else
+                {
+                    Expect(TokenType.LBrace, "Expected '{' to start embedded expression.");
+                    var expr = ParseExpression();
+                    Expect(TokenType.RBrace, "Expected '}' to end embedded expression.");
+                    return new SyntaxEmbedExpr
+                    {
+                        Expression = expr,
+                        Line = expr.Line,
+                        Column = expr.Column
+                    };
+                }
             }
             if (Match(TokenType.LParen))
             {
@@ -607,8 +629,29 @@ namespace Narratoria.Core
         private SyntaxEmbedCall ParseEmbedCall()
         {
             Expect(TokenType.LBrace, "Expected '{' to start embedded expression.");
-            var call = ParseCall();
+
+            var callToken = Expect(TokenType.Call, "Expected 'call' keyword.");
+            var functionNameToken = Expect(TokenType.Identifier, "Expected function name.");
+            Expect(TokenType.LParen, "Expected '(' after function name.");
+
+            var call = new SyntaxCall
+            {
+                FunctionName = functionNameToken,
+                Line = callToken.Line,
+                Column = callToken.Column
+            };
+
+            if (!Match(TokenType.RParen) && !Match(TokenType.Linebreak))
+            {
+                do
+                {
+                    call.Arguments.Add(ParseExpression());
+                } while (Match(TokenType.Comma) && Consume() != null);
+            }
+
+            Expect(TokenType.RParen, "Expected ')' after function arguments.");
             Expect(TokenType.RBrace, "Expected '}' to end embedded expression.");
+
             return new SyntaxEmbedCall
             {
                 Call = call,

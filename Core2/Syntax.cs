@@ -207,6 +207,7 @@ namespace Narratoria.Core
 
     public abstract class SyntaxVisitorBase<T> : ISyntaxVisitor<T>
     {
+        public virtual T Visit(SyntaxNode node) => node.Accept(this);
         public virtual T VisitProgram(SyntaxProgram node) => default!;
         public virtual T VisitImport(SyntaxImport node) => default!;
         public virtual T VisitLabelBlock(SyntaxLabelBlock node) => default!;
