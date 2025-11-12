@@ -44,7 +44,7 @@ namespace Narratoria.Core
                 var line = _inputStream.ReadLine() ?? "";
                 _line++;
                 _column = 1;
-                if (string.IsNullOrEmpty(line)) continue;
+                if (string.IsNullOrEmpty(line.Trim())) continue;
                 if (CurrentMode == TokenrizeMode.Default && line.TrimStart().StartsWith('#')) continue; // Skip single-line comments in default mode
                 line += "\n"; // Add linebreak for easier handling
 

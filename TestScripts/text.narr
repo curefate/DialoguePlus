@@ -17,8 +17,10 @@ label B:
     if $temp_num > 0 and not $temp_bool:
         "1"
     else:
-        "2"
+            "2"
     "option 1":
         "option 1 item"
+        call end()
     "option 2":
         "option 2 item"
+    "bye"

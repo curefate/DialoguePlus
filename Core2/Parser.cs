@@ -23,7 +23,14 @@ namespace Narratoria.Core
         private Token Expect(TokenType type, string message)
         {
             if (Current.Type == type) return Consume();
-            throw new Exception($"Expected {type} but found {Current.Type} at line {Current.Line}, column {Current.Column}. {message}");
+            if (String.IsNullOrEmpty(message))
+            {
+                throw new Exception($"Expected {type} but found {Current.Type}. [Ln {Current.Line}, Col {Current.Column}]");
+            }
+            else
+            {
+                throw new Exception(message + $" [Ln {Current.Line}, Col {Current.Column}]");
+            }
         }
         private Token Expect(params TokenType[] types)
         {
@@ -31,12 +38,23 @@ namespace Narratoria.Core
             {
                 if (Current.Type == type) return Consume();
             }
-            throw new Exception($"Expected one of [{string.Join(", ", types)}] but found {Current.Type} at line {Current.Line}, column {Current.Column}.");
+            throw new Exception($"Expected one of [{string.Join(", ", types)}] but found {Current.Type}. [Ln {Current.Line}, Col {Current.Column}]");
+        }
+        private bool HasColonInLine()
+        {
+            int lookahead = 0;
+            while (true)
+            {
+                var token = Peek(lookahead);
+                if (token.Type == TokenType.Colon) return true;
+                if (token.Type == TokenType.Linebreak || token.Type == TokenType.EOF) return false;
+                lookahead++;
+            }
         }
 
-        public SyntaxProgram Parse()
+        public SyntaxRoot Parse()
         {
-            var program = new SyntaxProgram();
+            var program = new SyntaxRoot();
 
             while (Match(TokenType.Import))
             {
@@ -62,16 +80,17 @@ namespace Narratoria.Core
                     Console.Error.WriteLine($"[Parser Error] {ex.Message}");
                     Console.ResetColor();
 
-                    // 错误恢复：跳过直到下一个语句起始或同步点
-                    while (!Match(TokenType.EOF, TokenType.Linebreak, TokenType.Label, TokenType.Jump, TokenType.Tour, TokenType.Call, TokenType.If, TokenType.Variable))
+                    // 错误恢复：跳过当前语句直到行尾或文件末尾
+                    while (!Match(TokenType.EOF, TokenType.Linebreak))
                     {
                         Consume();
                     }
 
                     if (Match(TokenType.Linebreak)) Consume();
+                    while (Match(TokenType.Dedent, TokenType.Indent)) Consume();
 
                     // 向外层抛出异常以供 IDE 或日志系统捕获
-                    throw;
+                    // throw;
                 }
             }
 
@@ -112,50 +131,26 @@ namespace Narratoria.Core
                 block.Statements.Add(ParseStatement());
             }
 
-            while (Match(TokenType.Dedent)) Consume();
+            Expect(TokenType.Dedent, "Expected dedentation after label block.");
 
             return block;
         }
 
         private SyntaxStatement ParseStatement()
         {
-            SyntaxStatement ret;
 
-            // 允许在Statement前缩进
-            bool indentConsumed = false;
-            if (Match(TokenType.Indent))
-            {
-                Consume();
-                indentConsumed = true;
-            }
-
-            if (Match(TokenType.Identifier)) ret = ParseDialogue();
+            if (Match(TokenType.Identifier)) return ParseDialogue();
             else if (Match(TokenType.Fstring_Quote))
             {
-                int lookahead = 1;
-                while (Peek(lookahead).Type != TokenType.Linebreak && Peek(lookahead).Type != TokenType.EOF)
-                {
-                    if (Peek(lookahead).Type == TokenType.Colon)
-                    {
-                        return ParseMenu();
-                    }
-                    lookahead++;
-                }
-                ret = ParseDialogue();
+                if (HasColonInLine()) return ParseMenu();
+                else return ParseDialogue();
             }
-            else if (Match(TokenType.Jump)) ret = ParseJump();
-            else if (Match(TokenType.Tour)) ret = ParseTour();
-            else if (Match(TokenType.Call)) ret = ParseCall();
-            else if (Match(TokenType.Variable)) ret = ParseAssign();
-            else if (Match(TokenType.If)) ret = ParseIf();
-            else throw new Exception($"Unexpected token {Current.Type} at line {Current.Line}, column {Current.Column}.");
-
-            if (indentConsumed)
-            {
-                Expect(TokenType.Dedent, "Expected dedentation after statement.");
-            }
-
-            return ret;
+            else if (Match(TokenType.Jump)) return ParseJump();
+            else if (Match(TokenType.Tour)) return ParseTour();
+            else if (Match(TokenType.Call)) return ParseCall();
+            else if (Match(TokenType.Variable)) return ParseAssign();
+            else if (Match(TokenType.If)) return ParseIf();
+            else throw new Exception($"Unexpected token {Current.Type}. [Ln {Current.Line}, Col {Current.Column}]");
         }
 
         private SyntaxDialogue ParseDialogue()
@@ -186,43 +181,29 @@ namespace Narratoria.Core
 
             while (Match(TokenType.Fstring_Quote))
             {
-                int lookahead = 1;
-                while (Peek(lookahead).Type != TokenType.Linebreak && Peek(lookahead).Type != TokenType.EOF)
+                if (!HasColonInLine()) break;
+                var text = ParseFString();
+                Expect(TokenType.Colon, "Expected ':' after menu option.");
+                Expect(TokenType.Linebreak, "Expected newline after menu option.");
+                Expect(TokenType.Indent, "Expected indentation after menu option.");
+
+                var item = new SyntaxMenuItem
                 {
-                    if (Peek(lookahead).Type == TokenType.Colon)
-                    {
-                        menu.Items.Add(ParseMenuItem());
-                        break;
-                    }
-                    lookahead++;
+                    Text = text,
+                    Line = text.Line,
+                    Column = text.Column
+                };
+
+                while (!Match(TokenType.Dedent, TokenType.EOF))
+                {
+                    item.Body.Add(ParseStatement());
                 }
+
+                Expect(TokenType.Dedent, "Expected dedentation after menu option.");
+                menu.Items.Add(item);
             }
 
             return menu;
-        }
-
-        private SyntaxMenuItem ParseMenuItem()
-        {
-            var text = ParseFString();
-            Expect(TokenType.Colon, "Expected ':' after menu option.");
-            Expect(TokenType.Linebreak, "Expected newline after menu option.");
-            Expect(TokenType.Indent, "Expected indentation after menu option.");
-
-            var item = new SyntaxMenuItem
-            {
-                Text = text,
-                Line = text.Line,
-                Column = text.Column
-            };
-
-            while (!Match(TokenType.Dedent, TokenType.EOF))
-            {
-                item.Body.Add(ParseStatement());
-            }
-
-            while (Match(TokenType.Dedent)) Consume();
-
-            return item;
         }
 
         private SyntaxJump ParseJump()
@@ -319,7 +300,7 @@ namespace Narratoria.Core
                 currentIfNode.ThenBlock.Add(ParseStatement());
             }
 
-            while (Match(TokenType.Dedent)) Consume();
+            Expect(TokenType.Dedent, "Expected dedentation after if block.");
 
             // 处理 elif 块
             while (Match(TokenType.Elif))
@@ -343,7 +324,7 @@ namespace Narratoria.Core
                     elifNode.ThenBlock.Add(ParseStatement());
                 }
 
-                while (Match(TokenType.Dedent)) Consume();
+                Expect(TokenType.Dedent, "Expected dedentation after elif block.");
 
                 currentIfNode.ElseBlock = [elifNode];
                 currentIfNode = elifNode;
@@ -363,18 +344,13 @@ namespace Narratoria.Core
                     currentIfNode.ElseBlock.Add(ParseStatement());
                 }
 
-                while (Match(TokenType.Dedent)) Consume();
+                Expect(TokenType.Dedent, "Expected dedentation after else block.");
             }
 
             return ifNode;
         }
 
-        private SyntaxExpression ParseExpression()
-        {
-            return ParseOr();
-        }
-
-        private SyntaxExprOr ParseOr()
+        private SyntaxExprOr ParseExpression()
         {
             var left = ParseAnd();
             var node = new SyntaxExprOr
@@ -629,18 +605,15 @@ namespace Narratoria.Core
         private SyntaxEmbedCall ParseEmbedCall()
         {
             Expect(TokenType.LBrace, "Expected '{' to start embedded expression.");
-
             var callToken = Expect(TokenType.Call, "Expected 'call' keyword.");
             var functionNameToken = Expect(TokenType.Identifier, "Expected function name.");
             Expect(TokenType.LParen, "Expected '(' after function name.");
-
             var call = new SyntaxCall
             {
                 FunctionName = functionNameToken,
                 Line = callToken.Line,
                 Column = callToken.Column
             };
-
             if (!Match(TokenType.RParen) && !Match(TokenType.Linebreak))
             {
                 do
@@ -648,10 +621,8 @@ namespace Narratoria.Core
                     call.Arguments.Add(ParseExpression());
                 } while (Match(TokenType.Comma) && Consume() != null);
             }
-
             Expect(TokenType.RParen, "Expected ')' after function arguments.");
             Expect(TokenType.RBrace, "Expected '}' to end embedded expression.");
-
             return new SyntaxEmbedCall
             {
                 Call = call,

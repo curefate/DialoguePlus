@@ -8,7 +8,7 @@ namespace Narratoria.Core
         public abstract T Accept<T>(ISyntaxVisitor<T> visitor);
     }
 
-    public class SyntaxProgram : SyntaxNode
+    public class SyntaxRoot : SyntaxNode
     {
         public List<SyntaxImport> Imports { get; } = [];
         public List<SyntaxStatement> TopLevelStatements { get; } = [];
@@ -178,7 +178,7 @@ namespace Narratoria.Core
 
     public interface ISyntaxVisitor<T>
     {
-        T VisitProgram(SyntaxProgram node);
+        T VisitProgram(SyntaxRoot node);
         T VisitImport(SyntaxImport node);
         T VisitLabelBlock(SyntaxLabelBlock node);
         T VisitDialogue(SyntaxDialogue node);
@@ -208,7 +208,7 @@ namespace Narratoria.Core
     public abstract class SyntaxVisitorBase<T> : ISyntaxVisitor<T>
     {
         public virtual T Visit(SyntaxNode node) => node.Accept(this);
-        public virtual T VisitProgram(SyntaxProgram node) => default!;
+        public virtual T VisitProgram(SyntaxRoot node) => default!;
         public virtual T VisitImport(SyntaxImport node) => default!;
         public virtual T VisitLabelBlock(SyntaxLabelBlock node) => default!;
         public virtual T VisitDialogue(SyntaxDialogue node) => default!;
