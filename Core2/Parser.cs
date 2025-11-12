@@ -1,4 +1,4 @@
-namespace Narratoria.Core
+/* namespace Narratoria.Core
 {
     public class Parser
     {
@@ -52,9 +52,9 @@ namespace Narratoria.Core
             }
         }
 
-        public SyntaxRoot Parse()
+        public ASTRoot Parse()
         {
-            var program = new SyntaxRoot();
+            var program = new ASTRoot();
 
             while (Match(TokenType.Import))
             {
@@ -97,13 +97,13 @@ namespace Narratoria.Core
             return program;
         }
 
-        private SyntaxImport ParseImport()
+        private AST_Import ParseImport()
         {
             var importToken = Expect(TokenType.Import, "Expected 'import' keyword.");
             var pathToken = Expect(TokenType.Path, "Expected import path.");
             Expect(TokenType.Linebreak, "Expected newline after import statement.");
 
-            return new SyntaxImport
+            return new AST_Import
             {
                 Path = pathToken,
                 Line = importToken.Line,
@@ -111,7 +111,7 @@ namespace Narratoria.Core
             };
         }
 
-        private SyntaxLabelBlock ParseLabelBlock()
+        private AST_LabelBlock ParseLabelBlock()
         {
             var labelToken = Expect(TokenType.Label, "Expected 'label' keyword.");
             var nameToken = Expect(TokenType.Identifier, "Expected label name.");
@@ -119,7 +119,7 @@ namespace Narratoria.Core
             Expect(TokenType.Linebreak, "Expected newline after label header.");
             Expect(TokenType.Indent, "Expected indentation after label header.");
 
-            var block = new SyntaxLabelBlock
+            var block = new AST_LabelBlock
             {
                 LabelName = nameToken,
                 Line = labelToken.Line,
@@ -136,7 +136,7 @@ namespace Narratoria.Core
             return block;
         }
 
-        private SyntaxStatement ParseStatement()
+        private AST_Statement ParseStatement()
         {
 
             if (Match(TokenType.Identifier)) return ParseDialogue();
@@ -153,7 +153,7 @@ namespace Narratoria.Core
             else throw new Exception($"Unexpected token {Current.Type}. [Ln {Current.Line}, Col {Current.Column}]");
         }
 
-        private SyntaxDialogue ParseDialogue()
+        private AST_Dialogue ParseDialogue()
         {
             Token? speaker = null;
             if (Match(TokenType.Identifier))
@@ -162,7 +162,7 @@ namespace Narratoria.Core
             }
             var text = ParseFString();
             Expect(TokenType.Linebreak, "Expected newline after dialogue.");
-            return new SyntaxDialogue
+            return new AST_Dialogue
             {
                 Speaker = speaker,
                 Text = text,
@@ -171,9 +171,9 @@ namespace Narratoria.Core
             };
         }
 
-        private SyntaxMenu ParseMenu()
+        private AST_Menu ParseMenu()
         {
-            var menu = new SyntaxMenu
+            var menu = new AST_Menu
             {
                 Line = Current.Line,
                 Column = Current.Column
@@ -187,7 +187,7 @@ namespace Narratoria.Core
                 Expect(TokenType.Linebreak, "Expected newline after menu option.");
                 Expect(TokenType.Indent, "Expected indentation after menu option.");
 
-                var item = new SyntaxMenuItem
+                var item = new AST_MenuItem
                 {
                     Text = text,
                     Line = text.Line,
@@ -206,12 +206,12 @@ namespace Narratoria.Core
             return menu;
         }
 
-        private SyntaxJump ParseJump()
+        private AST_Jump ParseJump()
         {
             var jumpToken = Expect(TokenType.Jump, "Expected 'jump' keyword.");
             var targetToken = Expect(TokenType.Identifier, "Expected target label name.");
             Expect(TokenType.Linebreak, "Expected newline after jump statement.");
-            return new SyntaxJump
+            return new AST_Jump
             {
                 TargetLabel = targetToken,
                 Line = jumpToken.Line,
@@ -219,12 +219,12 @@ namespace Narratoria.Core
             };
         }
 
-        private SyntaxTour ParseTour()
+        private AST_Tour ParseTour()
         {
             var tourToken = Expect(TokenType.Tour, "Expected 'tour' keyword.");
             var targetToken = Expect(TokenType.Identifier, "Expected target label name.");
             Expect(TokenType.Linebreak, "Expected newline after tour statement.");
-            return new SyntaxTour
+            return new AST_Tour
             {
                 TargetLabel = targetToken,
                 Line = tourToken.Line,
@@ -232,13 +232,13 @@ namespace Narratoria.Core
             };
         }
 
-        private SyntaxCall ParseCall()
+        private AST_Call ParseCall()
         {
             var callToken = Expect(TokenType.Call, "Expected 'call' keyword.");
             var functionNameToken = Expect(TokenType.Identifier, "Expected function name.");
             Expect(TokenType.LParen, "Expected '(' after function name.");
 
-            var call = new SyntaxCall
+            var call = new AST_Call
             {
                 FunctionName = functionNameToken,
                 Line = callToken.Line,
@@ -258,7 +258,7 @@ namespace Narratoria.Core
             return call;
         }
 
-        private SyntaxAssign ParseAssign()
+        private AST_Assign ParseAssign()
         {
             var variableToken = Expect(TokenType.Variable, "Expected variable.");
             TokenType[] assignTypes =
@@ -269,7 +269,7 @@ namespace Narratoria.Core
             var assignToken = Expect(assignTypes);
             var value = ParseExpression();
             Expect(TokenType.Linebreak, "Expected newline after assignment.");
-            return new SyntaxAssign
+            return new AST_Assign
             {
                 VariableName = variableToken,
                 Operator = assignToken,
@@ -279,7 +279,7 @@ namespace Narratoria.Core
             };
         }
 
-        private SyntaxIf ParseIf()
+        private AST_If ParseIf()
         {
             var ifToken = Expect(TokenType.If, "Expected 'if' keyword.");
             var condition = ParseExpression();
@@ -287,7 +287,7 @@ namespace Narratoria.Core
             Expect(TokenType.Linebreak, "Expected newline after if header.");
             Expect(TokenType.Indent, "Expected indentation after if header.");
 
-            var ifNode = new SyntaxIf
+            var ifNode = new AST_If
             {
                 Condition = condition,
                 Line = ifToken.Line,
@@ -312,7 +312,7 @@ namespace Narratoria.Core
                 Expect(TokenType.Indent, "Expected indentation after elif header.");
 
                 // 将 elif 转换为嵌套的 If 语句，添加到 ElseBlock 中
-                var elifNode = new SyntaxIf
+                var elifNode = new AST_If
                 {
                     Condition = elifCondition,
                     Line = elifToken.Line,
@@ -350,10 +350,10 @@ namespace Narratoria.Core
             return ifNode;
         }
 
-        private SyntaxExprOr ParseExpression()
+        private AST_Expr_Or ParseExpression()
         {
             var left = ParseAnd();
-            var node = new SyntaxExprOr
+            var node = new AST_Expr_Or
             {
                 Left = left,
                 Line = left.Line,
@@ -370,10 +370,10 @@ namespace Narratoria.Core
             return node;
         }
 
-        private SyntaxExprAnd ParseAnd()
+        private AST_Expr_And ParseAnd()
         {
             var left = ParseEquality();
-            var node = new SyntaxExprAnd
+            var node = new AST_Expr_And
             {
                 Left = left,
                 Line = left.Line,
@@ -390,14 +390,14 @@ namespace Narratoria.Core
             return node;
         }
 
-        private SyntaxExprEquality ParseEquality()
+        private AST_Expr_Equality ParseEquality()
         {
             var left = ParseComparison();
             if (Match(TokenType.Equal, TokenType.NotEqual))
             {
                 var operatorToken = Consume();
                 var right = ParseComparison();
-                return new SyntaxExprEquality
+                return new AST_Expr_Equality
                 {
                     Left = left,
                     Operator = operatorToken,
@@ -408,7 +408,7 @@ namespace Narratoria.Core
             }
             else
             {
-                return new SyntaxExprEquality
+                return new AST_Expr_Equality
                 {
                     Left = left,
                     Operator = null!,
@@ -419,14 +419,14 @@ namespace Narratoria.Core
             }
         }
 
-        private SyntaxExprComparison ParseComparison()
+        private AST_Expr_Comparison ParseComparison()
         {
             var left = ParseAdditive();
             if (Match(TokenType.Less, TokenType.Greater, TokenType.LessEqual, TokenType.GreaterEqual))
             {
                 var operatorToken = Consume();
                 var right = ParseAdditive();
-                return new SyntaxExprComparison
+                return new AST_Expr_Comparison
                 {
                     Left = left,
                     Operator = operatorToken,
@@ -437,7 +437,7 @@ namespace Narratoria.Core
             }
             else
             {
-                return new SyntaxExprComparison
+                return new AST_Expr_Comparison
                 {
                     Left = left,
                     Operator = null!,
@@ -448,10 +448,10 @@ namespace Narratoria.Core
             }
         }
 
-        private SyntaxExprAdditive ParseAdditive()
+        private AST_Expr_Additive ParseAdditive()
         {
             var left = ParseMultiplicative();
-            var node = new SyntaxExprAdditive
+            var node = new AST_Expr_Additive
             {
                 Left = left,
                 Line = left.Line,
@@ -468,10 +468,10 @@ namespace Narratoria.Core
             return node;
         }
 
-        private SyntaxExprMultiplicative ParseMultiplicative()
+        private AST_Expr_Multiplicative ParseMultiplicative()
         {
             var left = ParsePower();
-            var node = new SyntaxExprMultiplicative
+            var node = new AST_Expr_Multiplicative
             {
                 Left = left,
                 Line = left.Line,
@@ -488,10 +488,10 @@ namespace Narratoria.Core
             return node;
         }
 
-        private SyntaxExprPower ParsePower()
+        private AST_Expr_Power ParsePower()
         {
             var baseExpr = ParseUnary();
-            SyntaxExprPower node = new()
+            AST_Expr_Power node = new()
             {
                 Base = baseExpr,
                 Line = baseExpr.Line,
@@ -506,7 +506,7 @@ namespace Narratoria.Core
             return node;
         }
 
-        private SyntaxExprUnary ParseUnary()
+        private AST_Expr_Unary ParseUnary()
         {
             Token? operatorToken = null;
             if (Match(TokenType.Not, TokenType.Minus, TokenType.Plus))
@@ -514,7 +514,7 @@ namespace Narratoria.Core
                 operatorToken = Consume();
             }
             var primary = ParsePrimary();
-            return new SyntaxExprUnary
+            return new AST_Expr_Unary
             {
                 Operator = operatorToken,
                 Primary = primary,
@@ -523,12 +523,12 @@ namespace Narratoria.Core
             };
         }
 
-        private SyntaxExprPrimary ParsePrimary()
+        private AST_Expr_Primary ParsePrimary()
         {
             if (Match(TokenType.Number, TokenType.Boolean, TokenType.Variable))
             {
                 var literalToken = Consume();
-                return new SyntaxLiteral
+                return new AST_Literal
                 {
                     Value = literalToken,
                     Line = literalToken.Line,
@@ -550,7 +550,7 @@ namespace Narratoria.Core
                     Expect(TokenType.LBrace, "Expected '{' to start embedded expression.");
                     var expr = ParseExpression();
                     Expect(TokenType.RBrace, "Expected '}' to end embedded expression.");
-                    return new SyntaxEmbedExpr
+                    return new AST_EmbedExpr
                     {
                         Expression = expr,
                         Line = expr.Line,
@@ -563,7 +563,7 @@ namespace Narratoria.Core
                 Expect(TokenType.LParen, "Expected '(' to start expression.");
                 var expr = ParseExpression();
                 Expect(TokenType.RParen, "Expected ')' to end expression.");
-                return new SyntaxEmbedExpr
+                return new AST_EmbedExpr
                 {
                     Expression = expr,
                     Line = expr.Line,
@@ -573,10 +573,10 @@ namespace Narratoria.Core
             throw new Exception($"Unexpected token {Current.Type} at line {Current.Line}, column {Current.Column}.");
         }
 
-        private SyntaxFString ParseFString()
+        private AST_FString ParseFString()
         {
             Expect(TokenType.Fstring_Quote, "Expected '\"' to start f-string.");
-            var fstring = new SyntaxFString
+            var fstring = new AST_FString
             {
                 Line = Current.Line,
                 Column = Current.Column
@@ -602,13 +602,13 @@ namespace Narratoria.Core
             return fstring;
         }
 
-        private SyntaxEmbedCall ParseEmbedCall()
+        private AST_EmbedCall ParseEmbedCall()
         {
             Expect(TokenType.LBrace, "Expected '{' to start embedded expression.");
             var callToken = Expect(TokenType.Call, "Expected 'call' keyword.");
             var functionNameToken = Expect(TokenType.Identifier, "Expected function name.");
             Expect(TokenType.LParen, "Expected '(' after function name.");
-            var call = new SyntaxCall
+            var call = new AST_Call
             {
                 FunctionName = functionNameToken,
                 Line = callToken.Line,
@@ -623,7 +623,7 @@ namespace Narratoria.Core
             }
             Expect(TokenType.RParen, "Expected ')' after function arguments.");
             Expect(TokenType.RBrace, "Expected '}' to end embedded expression.");
-            return new SyntaxEmbedCall
+            return new AST_EmbedCall
             {
                 Call = call,
                 Line = call.Line,
@@ -632,3 +632,4 @@ namespace Narratoria.Core
         }
     }
 }
+ */

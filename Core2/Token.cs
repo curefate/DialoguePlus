@@ -5,7 +5,7 @@ namespace Narratoria.Core
     public enum TokenType
     {
         // Special
-        Indent, Dedent, WS, Linebreak, Comment, Error, EOF,
+        Indent, Dedent, WS, Linebreak, Comment, PlaceHolder, Error, EOF,
 
         // Keywords
         Label, Jump, Tour, Call, Import, If, Else, Elif,

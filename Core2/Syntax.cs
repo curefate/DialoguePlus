@@ -1,237 +1,293 @@
 
 namespace Narratoria.Core
 {
-    public abstract class SyntaxNode
+    public abstract class ASTNode
     {
         public int Line { get; set; }
         public int Column { get; set; }
-        public abstract T Accept<T>(ISyntaxVisitor<T> visitor);
+        public abstract T Accept<T>(IASTVisitor<T> visitor);
     }
 
-    public class SyntaxRoot : SyntaxNode
+    public class ASTRoot : ASTNode
     {
-        public List<SyntaxImport> Imports { get; } = [];
-        public List<SyntaxStatement> TopLevelStatements { get; } = [];
-        public List<SyntaxLabelBlock> Labels { get; } = [];
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitProgram(this);
+        public List<AST_Import> Imports { get; } = [];
+        public List<AST_Statement> TopLevelStatements { get; } = [];
+        public List<AST_LabelBlock> Labels { get; } = [];
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitProgram(this);
     }
 
-    public class SyntaxImport : SyntaxNode
+    public class AST_Import : ASTNode
     {
         public required Token Path { get; init; }
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitImport(this);
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitImport(this);
     }
 
-    public class SyntaxLabelBlock : SyntaxNode
+    public class AST_LabelBlock : ASTNode
     {
         public required Token LabelName { get; init; }
-        public List<SyntaxStatement> Statements { get; } = [];
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitLabelBlock(this);
+        public List<AST_Statement> Statements { get; } = [];
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitLabelBlock(this);
     }
 
-    public abstract class SyntaxStatement : SyntaxNode { }
+    public abstract class AST_Statement : ASTNode { }
 
-    public class SyntaxDialogue : SyntaxStatement
+    public class AST_Dialogue : AST_Statement
     {
         public Token? Speaker { get; init; }
-        public required SyntaxFString Text { get; init; }
+        public required AST_FString Text { get; init; }
         // public List<string> Tags { get; } = [];
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitDialogue(this);
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitDialogue(this);
     }
 
-    public class SyntaxMenu : SyntaxStatement
+    public class AST_Menu : AST_Statement
     {
-        public List<SyntaxMenuItem> Items { get; } = [];
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitMenu(this);
+        public List<AST_MenuItem> Items { get; } = [];
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitMenu(this);
     }
 
-    public class SyntaxMenuItem : SyntaxNode
+    public class AST_MenuItem : ASTNode
     {
-        public required SyntaxFString Text { get; init; }
-        public List<SyntaxStatement> Body { get; } = [];
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitMenuItem(this);
+        public required AST_FString Text { get; init; }
+        public List<AST_Statement> Body { get; } = [];
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitMenuItem(this);
     }
 
-    public class SyntaxJump : SyntaxStatement
-    {
-        public required Token TargetLabel { get; init; }
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitJump(this);
-    }
-
-    public class SyntaxTour : SyntaxStatement
+    public class AST_Jump : AST_Statement
     {
         public required Token TargetLabel { get; init; }
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitTour(this);
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitJump(this);
     }
 
-    public class SyntaxCall : SyntaxStatement
+    public class AST_Tour : AST_Statement
+    {
+        public required Token TargetLabel { get; init; }
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitTour(this);
+    }
+
+    public class AST_Call : AST_Statement
     {
         public required Token FunctionName { get; init; }
-        public List<SyntaxExpression> Arguments { get; } = [];
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitCall(this);
+        public List<AST_Expression> Arguments { get; } = [];
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitCall(this);
     }
 
-    public class SyntaxAssign : SyntaxStatement
+    public class AST_Assign : AST_Statement
     {
         public required Token VariableName { get; init; }
         public required Token Operator { get; init; }
-        public required SyntaxExpression Value { get; init; }
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitAssign(this);
+        public required AST_Expression Value { get; init; }
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitAssign(this);
     }
 
-    public class SyntaxIf : SyntaxStatement
+    public class AST_If : AST_Statement
     {
-        public required SyntaxExpression Condition { get; init; }
-        public List<SyntaxStatement> ThenBlock { get; } = [];
-        public List<SyntaxStatement>? ElseBlock { get; set; }
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitIf(this);
+        public required AST_Expression Condition { get; init; }
+        public List<AST_Statement> ThenBlock { get; } = [];
+        public List<AST_Statement>? ElseBlock { get; set; }
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitIf(this);
     }
 
-    public abstract class SyntaxExpression : SyntaxNode { }
+    public abstract class AST_Expression : ASTNode { }
 
-    public class SyntaxExprOr : SyntaxExpression
+    public class AST_Expr_Or : AST_Expression
     {
-        public required SyntaxExprAnd Left { get; init; }
-        public List<(Token Operator, SyntaxExprAnd Right)> Rights { get; } = [];
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitExprOr(this);
+        public required AST_Expr_And Left { get; init; }
+        public List<(Token Operator, AST_Expr_And Right)> Rights { get; } = [];
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitExprOr(this);
     }
 
-    public class SyntaxExprAnd : SyntaxExpression
+    public class AST_Expr_And : AST_Expression
     {
-        public required SyntaxExprEquality Left { get; init; }
-        public List<(Token Operator, SyntaxExprEquality Right)> Rights { get; } = [];
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitExprAnd(this);
+        public required AST_Expr_Equality Left { get; init; }
+        public List<(Token Operator, AST_Expr_Equality Right)> Rights { get; } = [];
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitExprAnd(this);
     }
 
-    public class SyntaxExprEquality : SyntaxExpression
+    public class AST_Expr_Equality : AST_Expression
     {
-        public required SyntaxExprComparison Left { get; init; }
+        public required AST_Expr_Comparison Left { get; init; }
         public required Token? Operator { get; init; }
-        public required SyntaxExprComparison? Right { get; init; }
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitExprEquality(this);
+        public required AST_Expr_Comparison? Right { get; init; }
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitExprEquality(this);
     }
 
-    public class SyntaxExprComparison : SyntaxExpression
+    public class AST_Expr_Comparison : AST_Expression
     {
-        public required SyntaxExprAdditive Left { get; init; }
+        public required AST_Expr_Additive Left { get; init; }
         public required Token? Operator { get; init; }
-        public required SyntaxExprAdditive? Right { get; init; }
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitExprComparison(this);
+        public required AST_Expr_Additive? Right { get; init; }
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitExprComparison(this);
     }
 
-    public class SyntaxExprAdditive : SyntaxExpression
+    public class AST_Expr_Additive : AST_Expression
     {
-        public required SyntaxExprMultiplicative Left { get; init; }
-        public List<(Token Operator, SyntaxExprMultiplicative Right)> Rights { get; } = [];
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitExprAdditive(this);
+        public required AST_Expr_Multiplicative Left { get; init; }
+        public List<(Token Operator, AST_Expr_Multiplicative Right)> Rights { get; } = [];
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitExprAdditive(this);
     }
 
-    public class SyntaxExprMultiplicative : SyntaxExpression
+    public class AST_Expr_Multiplicative : AST_Expression
     {
-        public required SyntaxExprPower Left { get; init; }
-        public List<(Token Operator, SyntaxExprPower Right)> Rights { get; } = [];
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitExprMultiplicative(this);
+        public required AST_Expr_Power Left { get; init; }
+        public List<(Token Operator, AST_Expr_Power Right)> Rights { get; } = [];
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitExprMultiplicative(this);
     }
 
-    public class SyntaxExprPower : SyntaxExpression
+    public class AST_Expr_Power : AST_Expression
     {
-        public required SyntaxExprUnary Base { get; init; }
-        public List<SyntaxExprUnary> Exponents { get; } = [];
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitExprPower(this);
+        public required AST_Expr_Unary Base { get; init; }
+        public List<AST_Expr_Unary> Exponents { get; } = [];
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitExprPower(this);
     }
 
-    public class SyntaxExprUnary : SyntaxExpression
+    public class AST_Expr_Unary : AST_Expression
     {
         public required Token? Operator { get; init; }
-        public required SyntaxExprPrimary Primary { get; init; }
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitExprUnary(this);
+        public required AST_Expr_Primary Primary { get; init; }
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitExprUnary(this);
     }
 
-    public abstract class SyntaxExprPrimary : SyntaxExpression { }
+    public abstract class AST_Expr_Primary : AST_Expression { }
 
-    public class SyntaxLiteral : SyntaxExprPrimary
+    public class AST_Literal : AST_Expr_Primary
     {
         public required Token Value { get; init; }
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitLiteral(this);
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitLiteral(this);
     }
 
-    public class SyntaxFString : SyntaxExprPrimary
+    public class AST_FString : AST_Expr_Primary
     {
         public List<Token> Fragments { get; } = [];
-        public Queue<(SyntaxExpression Call, int Index)> Embedded { get; } = [];
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitFString(this);
+        public Queue<(AST_Expression Call, int Index)> Embedded { get; } = [];
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitFString(this);
     }
 
-    public class SyntaxEmbedCall : SyntaxExprPrimary
+    public class AST_EmbedCall : AST_Expr_Primary
     {
-        public required SyntaxCall Call { get; init; }
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitEmbedCall(this);
+        public required AST_Call Call { get; init; }
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitEmbedCall(this);
     }
 
-    public class SyntaxEmbedExpr : SyntaxExprPrimary
+    public class AST_EmbedExpr : AST_Expr_Primary
     {
-        public required SyntaxExpression Expression { get; init; }
-        public override T Accept<T>(ISyntaxVisitor<T> visitor) => visitor.VisitEmbedExpr(this);
+        public required AST_Expression Expression { get; init; }
+        public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitEmbedExpr(this);
     }
 
-    // ========== Visitor Interface ==========
+    // =========================== Visitor ===========================
 
-    public interface ISyntaxVisitor<T>
+    public interface IASTVisitor<T>
     {
-        T VisitProgram(SyntaxRoot node);
-        T VisitImport(SyntaxImport node);
-        T VisitLabelBlock(SyntaxLabelBlock node);
-        T VisitDialogue(SyntaxDialogue node);
-        T VisitMenu(SyntaxMenu node);
-        T VisitMenuItem(SyntaxMenuItem node);
-        T VisitJump(SyntaxJump node);
-        T VisitTour(SyntaxTour node);
-        T VisitCall(SyntaxCall node);
-        T VisitAssign(SyntaxAssign node);
-        T VisitIf(SyntaxIf node);
+        T VisitProgram(ASTRoot node);
+        T VisitImport(AST_Import node);
+        T VisitLabelBlock(AST_LabelBlock node);
+        T VisitDialogue(AST_Dialogue node);
+        T VisitMenu(AST_Menu node);
+        T VisitMenuItem(AST_MenuItem node);
+        T VisitJump(AST_Jump node);
+        T VisitTour(AST_Tour node);
+        T VisitCall(AST_Call node);
+        T VisitAssign(AST_Assign node);
+        T VisitIf(AST_If node);
 
-        T VisitExprOr(SyntaxExprOr node);
-        T VisitExprAnd(SyntaxExprAnd node);
-        T VisitExprEquality(SyntaxExprEquality node);
-        T VisitExprComparison(SyntaxExprComparison node);
-        T VisitExprAdditive(SyntaxExprAdditive node);
-        T VisitExprMultiplicative(SyntaxExprMultiplicative node);
-        T VisitExprPower(SyntaxExprPower node);
-        T VisitExprUnary(SyntaxExprUnary node);
+        T VisitExprOr(AST_Expr_Or node);
+        T VisitExprAnd(AST_Expr_And node);
+        T VisitExprEquality(AST_Expr_Equality node);
+        T VisitExprComparison(AST_Expr_Comparison node);
+        T VisitExprAdditive(AST_Expr_Additive node);
+        T VisitExprMultiplicative(AST_Expr_Multiplicative node);
+        T VisitExprPower(AST_Expr_Power node);
+        T VisitExprUnary(AST_Expr_Unary node);
 
-        T VisitLiteral(SyntaxLiteral node);
-        T VisitFString(SyntaxFString node);
-        T VisitEmbedCall(SyntaxEmbedCall node);
-        T VisitEmbedExpr(SyntaxEmbedExpr node);
+        T VisitLiteral(AST_Literal node);
+        T VisitFString(AST_FString node);
+        T VisitEmbedCall(AST_EmbedCall node);
+        T VisitEmbedExpr(AST_EmbedExpr node);
     }
 
-    public abstract class SyntaxVisitorBase<T> : ISyntaxVisitor<T>
+    public abstract class SyntaxVisitorBase<T> : IASTVisitor<T>
     {
-        public virtual T Visit(SyntaxNode node) => node.Accept(this);
-        public virtual T VisitProgram(SyntaxRoot node) => default!;
-        public virtual T VisitImport(SyntaxImport node) => default!;
-        public virtual T VisitLabelBlock(SyntaxLabelBlock node) => default!;
-        public virtual T VisitDialogue(SyntaxDialogue node) => default!;
-        public virtual T VisitMenu(SyntaxMenu node) => default!;
-        public virtual T VisitMenuItem(SyntaxMenuItem node) => default!;
-        public virtual T VisitJump(SyntaxJump node) => default!;
-        public virtual T VisitTour(SyntaxTour node) => default!;
-        public virtual T VisitCall(SyntaxCall node) => default!;
-        public virtual T VisitAssign(SyntaxAssign node) => default!;
-        public virtual T VisitIf(SyntaxIf node) => default!;
+        public virtual T Visit(ASTNode node) => node.Accept(this);
+        public virtual T VisitProgram(ASTRoot node) => default!;
+        public virtual T VisitImport(AST_Import node) => default!;
+        public virtual T VisitLabelBlock(AST_LabelBlock node) => default!;
+        public virtual T VisitDialogue(AST_Dialogue node) => default!;
+        public virtual T VisitMenu(AST_Menu node) => default!;
+        public virtual T VisitMenuItem(AST_MenuItem node) => default!;
+        public virtual T VisitJump(AST_Jump node) => default!;
+        public virtual T VisitTour(AST_Tour node) => default!;
+        public virtual T VisitCall(AST_Call node) => default!;
+        public virtual T VisitAssign(AST_Assign node) => default!;
+        public virtual T VisitIf(AST_If node) => default!;
 
-        public virtual T VisitExprOr(SyntaxExprOr node) => default!;
-        public virtual T VisitExprAnd(SyntaxExprAnd node) => default!;
-        public virtual T VisitExprEquality(SyntaxExprEquality node) => default!;
-        public virtual T VisitExprComparison(SyntaxExprComparison node) => default!;
-        public virtual T VisitExprAdditive(SyntaxExprAdditive node) => default!;
-        public virtual T VisitExprMultiplicative(SyntaxExprMultiplicative node) => default!;
-        public virtual T VisitExprPower(SyntaxExprPower node) => default!;
-        public virtual T VisitExprUnary(SyntaxExprUnary node) => default!;
+        public virtual T VisitExprOr(AST_Expr_Or node) => default!;
+        public virtual T VisitExprAnd(AST_Expr_And node) => default!;
+        public virtual T VisitExprEquality(AST_Expr_Equality node) => default!;
+        public virtual T VisitExprComparison(AST_Expr_Comparison node) => default!;
+        public virtual T VisitExprAdditive(AST_Expr_Additive node) => default!;
+        public virtual T VisitExprMultiplicative(AST_Expr_Multiplicative node) => default!;
+        public virtual T VisitExprPower(AST_Expr_Power node) => default!;
+        public virtual T VisitExprUnary(AST_Expr_Unary node) => default!;
 
-        public virtual T VisitLiteral(SyntaxLiteral node) => default!;
-        public virtual T VisitFString(SyntaxFString node) => default!;
-        public virtual T VisitEmbedCall(SyntaxEmbedCall node) => default!;
-        public virtual T VisitEmbedExpr(SyntaxEmbedExpr node) => default!;
+        public virtual T VisitLiteral(AST_Literal node) => default!;
+        public virtual T VisitFString(AST_FString node) => default!;
+        public virtual T VisitEmbedCall(AST_EmbedCall node) => default!;
+        public virtual T VisitEmbedExpr(AST_EmbedExpr node) => default!;
+    }
+
+    // =========================== Syntax Definitions ===========================
+
+    internal abstract class SyntaxElement { }
+
+    internal class SyntaxSequence : SyntaxElement
+    {
+        public List<SyntaxElement> Elements { get; } = [];
+        public SyntaxSequence(params SyntaxElement[] elements) => Elements = [.. elements];
+    }
+
+    internal class SyntaxOr : SyntaxElement
+    {
+        public List<SyntaxElement> Options { get; } = [];
+        public SyntaxOr(params SyntaxElement[] options) => Options = [.. options];
+    }
+
+    internal class SyntaxOptional : SyntaxElement // ? zero or one
+    {
+        public SyntaxElement Element { get; }
+        public SyntaxOptional(SyntaxElement element) => Element = element;
+    }
+
+    internal class SyntaxStar : SyntaxElement // * zero or more
+    {
+        public SyntaxElement Element { get; }
+        public SyntaxStar(SyntaxElement element) => Element = element;
+    }
+
+    internal class SyntaxPlus : SyntaxElement // + one or more
+    {
+        public SyntaxElement Element { get; }
+        public SyntaxPlus(SyntaxElement element) => Element = element;
+    }
+
+    internal class SyntaxTokenType : SyntaxElement
+    {
+        public TokenType Type { get; }
+        public Action<ASTNode, Token>? Setter { get; init; }
+        public SyntaxTokenType(TokenType type, Action<ASTNode, Token>? setter = null)
+        {
+            Type = type;
+            Setter = setter;
+        }
+    }
+
+    internal class SyntaxNodeElement : SyntaxElement
+    {
+        public Type NodeType { get; }
+        public Action<ASTNode, ASTNode>? Setter { get; init; }
+        public SyntaxNodeElement(Type nodeType, Action<ASTNode, ASTNode>? setter = null)
+        {
+            NodeType = nodeType;
+            Setter = setter;
+        }
     }
 }
