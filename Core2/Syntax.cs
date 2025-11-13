@@ -158,7 +158,7 @@ namespace Narratoria.Core
     public class AST_FString : AST_Expr_Primary
     {
         public List<Token> Fragments { get; } = [];
-        public Queue<(AST_Expression Call, int Index)> Embedded { get; } = [];
+        public List<AST_Expression> Embeds { get; } = [];
         public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitFString(this);
     }
 
@@ -233,61 +233,5 @@ namespace Narratoria.Core
         public virtual T VisitFString(AST_FString node) => default!;
         public virtual T VisitEmbedCall(AST_EmbedCall node) => default!;
         public virtual T VisitEmbedExpr(AST_EmbedExpr node) => default!;
-    }
-
-    // =========================== Syntax Definitions ===========================
-
-    internal abstract class SyntaxElement { }
-
-    internal class SyntaxSequence : SyntaxElement
-    {
-        public List<SyntaxElement> Elements { get; } = [];
-        public SyntaxSequence(params SyntaxElement[] elements) => Elements = [.. elements];
-    }
-
-    internal class SyntaxOr : SyntaxElement
-    {
-        public List<SyntaxElement> Options { get; } = [];
-        public SyntaxOr(params SyntaxElement[] options) => Options = [.. options];
-    }
-
-    internal class SyntaxOptional : SyntaxElement // ? zero or one
-    {
-        public SyntaxElement Element { get; }
-        public SyntaxOptional(SyntaxElement element) => Element = element;
-    }
-
-    internal class SyntaxStar : SyntaxElement // * zero or more
-    {
-        public SyntaxElement Element { get; }
-        public SyntaxStar(SyntaxElement element) => Element = element;
-    }
-
-    internal class SyntaxPlus : SyntaxElement // + one or more
-    {
-        public SyntaxElement Element { get; }
-        public SyntaxPlus(SyntaxElement element) => Element = element;
-    }
-
-    internal class SyntaxTokenType : SyntaxElement
-    {
-        public TokenType Type { get; }
-        public Action<ASTNode, Token>? Setter { get; init; }
-        public SyntaxTokenType(TokenType type, Action<ASTNode, Token>? setter = null)
-        {
-            Type = type;
-            Setter = setter;
-        }
-    }
-
-    internal class SyntaxNodeElement : SyntaxElement
-    {
-        public Type NodeType { get; }
-        public Action<ASTNode, ASTNode>? Setter { get; init; }
-        public SyntaxNodeElement(Type nodeType, Action<ASTNode, ASTNode>? setter = null)
-        {
-            NodeType = nodeType;
-            Setter = setter;
-        }
     }
 }

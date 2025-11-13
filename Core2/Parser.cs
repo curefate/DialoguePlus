@@ -1,4 +1,4 @@
-/* namespace Narratoria.Core
+namespace Narratoria.Core
 {
     public class Parser
     {
@@ -590,7 +590,16 @@
                 }
                 else if (Match(TokenType.LBrace))
                 {
-                    fstring.Embedded.Enqueue((ParseExpression(), fstring.Fragments.Count));
+                    fstring.Embeds.Add(ParseExpression());
+                    fstring.Fragments.Add(
+                        new Token
+                        {
+                            Type = TokenType.PlaceHolder,
+                            Text = "{expr}",
+                            Line = Current.Line,
+                            Column = Current.Column
+                        }
+                    );
                 }
                 else
                 {
@@ -632,4 +641,3 @@
         }
     }
 }
- */
