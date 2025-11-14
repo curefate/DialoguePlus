@@ -182,28 +182,32 @@ namespace Narratoria.Core
             while (Match(TokenType.Fstring_Quote))
             {
                 if (!HasColonInLine()) break;
-                var text = ParseFString();
-                Expect(TokenType.Colon, "Expected ':' after menu option.");
-                Expect(TokenType.Linebreak, "Expected newline after menu option.");
-                Expect(TokenType.Indent, "Expected indentation after menu option.");
+                menu.Items.Add(ParseMenuItem());
+            }
+            return menu;
+        }
 
-                var item = new AST_MenuItem
-                {
-                    Text = text,
-                    Line = text.Line,
-                    Column = text.Column
-                };
+        private AST_MenuItem ParseMenuItem()
+        {
+            var text = ParseFString();
+            Expect(TokenType.Colon, "Expected ':' after menu option.");
+            Expect(TokenType.Linebreak, "Expected newline after menu option.");
+            Expect(TokenType.Indent, "Expected indentation after menu option.");
 
-                while (!Match(TokenType.Dedent, TokenType.EOF))
-                {
-                    item.Body.Add(ParseStatement());
-                }
+            var item = new AST_MenuItem
+            {
+                Text = text,
+                Line = text.Line,
+                Column = text.Column
+            };
 
-                Expect(TokenType.Dedent, "Expected dedentation after menu option.");
-                menu.Items.Add(item);
+            while (!Match(TokenType.Dedent, TokenType.EOF))
+            {
+                item.Body.Add(ParseStatement());
             }
 
-            return menu;
+            Expect(TokenType.Dedent, "Expected dedentation after menu option.");
+            return item;
         }
 
         private AST_Jump ParseJump()
@@ -237,14 +241,12 @@ namespace Narratoria.Core
             var callToken = Expect(TokenType.Call, "Expected 'call' keyword.");
             var functionNameToken = Expect(TokenType.Identifier, "Expected function name.");
             Expect(TokenType.LParen, "Expected '(' after function name.");
-
             var call = new AST_Call
             {
                 FunctionName = functionNameToken,
                 Line = callToken.Line,
                 Column = callToken.Column
             };
-
             if (!Match(TokenType.RParen) && !Match(TokenType.Linebreak))
             {
                 do
@@ -252,7 +254,6 @@ namespace Narratoria.Core
                     call.Arguments.Add(ParseExpression());
                 } while (Match(TokenType.Comma) && Consume() != null);
             }
-
             Expect(TokenType.RParen, "Expected ')' after function arguments.");
             Expect(TokenType.Linebreak, "Expected newline after call statement.");
             return call;
@@ -286,7 +287,6 @@ namespace Narratoria.Core
             Expect(TokenType.Colon, "Expected ':' after if condition.");
             Expect(TokenType.Linebreak, "Expected newline after if header.");
             Expect(TokenType.Indent, "Expected indentation after if header.");
-
             var ifNode = new AST_If
             {
                 Condition = condition,
@@ -299,7 +299,6 @@ namespace Narratoria.Core
             {
                 currentIfNode.ThenBlock.Add(ParseStatement());
             }
-
             Expect(TokenType.Dedent, "Expected dedentation after if block.");
 
             // 处理 elif 块
@@ -310,7 +309,6 @@ namespace Narratoria.Core
                 Expect(TokenType.Colon, "Expected ':' after elif condition.");
                 Expect(TokenType.Linebreak, "Expected newline after elif header.");
                 Expect(TokenType.Indent, "Expected indentation after elif header.");
-
                 // 将 elif 转换为嵌套的 If 语句，添加到 ElseBlock 中
                 var elifNode = new AST_If
                 {
@@ -318,12 +316,10 @@ namespace Narratoria.Core
                     Line = elifToken.Line,
                     Column = elifToken.Column
                 };
-
                 while (!Match(TokenType.Dedent, TokenType.EOF))
                 {
                     elifNode.ThenBlock.Add(ParseStatement());
                 }
-
                 Expect(TokenType.Dedent, "Expected dedentation after elif block.");
 
                 currentIfNode.ElseBlock = [elifNode];
@@ -337,16 +333,13 @@ namespace Narratoria.Core
                 Expect(TokenType.Colon, "Expected ':' after else.");
                 Expect(TokenType.Linebreak, "Expected newline after else header.");
                 Expect(TokenType.Indent, "Expected indentation after else header.");
-
                 currentIfNode.ElseBlock = [];
                 while (!Match(TokenType.Dedent, TokenType.EOF))
                 {
                     currentIfNode.ElseBlock.Add(ParseStatement());
                 }
-
                 Expect(TokenType.Dedent, "Expected dedentation after else block.");
             }
-
             return ifNode;
         }
 
@@ -359,14 +352,12 @@ namespace Narratoria.Core
                 Line = left.Line,
                 Column = left.Column
             };
-
             while (Match(TokenType.Or))
             {
                 var operatorToken = Consume();
                 var right = ParseAnd();
                 node.Rights.Add((operatorToken, right));
             }
-
             return node;
         }
 
@@ -379,73 +370,53 @@ namespace Narratoria.Core
                 Line = left.Line,
                 Column = left.Column
             };
-
             while (Match(TokenType.And))
             {
                 var operatorToken = Consume();
                 var right = ParseEquality();
                 node.Rights.Add((operatorToken, right));
             }
-
             return node;
         }
 
         private AST_Expr_Equality ParseEquality()
         {
             var left = ParseComparison();
+            Token? operatorToken = null;
+            AST_Expr_Comparison? right = null;
             if (Match(TokenType.Equal, TokenType.NotEqual))
             {
-                var operatorToken = Consume();
-                var right = ParseComparison();
-                return new AST_Expr_Equality
-                {
-                    Left = left,
-                    Operator = operatorToken,
-                    Right = right,
-                    Line = left.Line,
-                    Column = left.Column
-                };
+                operatorToken = Consume();
+                right = ParseComparison();
             }
-            else
+            return new AST_Expr_Equality
             {
-                return new AST_Expr_Equality
-                {
-                    Left = left,
-                    Operator = null!,
-                    Right = null!,
-                    Line = left.Line,
-                    Column = left.Column
-                };
-            }
+                Left = left,
+                Operator = operatorToken,
+                Right = right,
+                Line = left.Line,
+                Column = left.Column
+            };
         }
 
         private AST_Expr_Comparison ParseComparison()
         {
             var left = ParseAdditive();
+            Token? operatorToken = null;
+            AST_Expr_Additive? right = null;
             if (Match(TokenType.Less, TokenType.Greater, TokenType.LessEqual, TokenType.GreaterEqual))
             {
-                var operatorToken = Consume();
-                var right = ParseAdditive();
-                return new AST_Expr_Comparison
-                {
-                    Left = left,
-                    Operator = operatorToken,
-                    Right = right,
-                    Line = left.Line,
-                    Column = left.Column
-                };
+                operatorToken = Consume();
+                right = ParseAdditive();
             }
-            else
+            return new AST_Expr_Comparison
             {
-                return new AST_Expr_Comparison
-                {
-                    Left = left,
-                    Operator = null!,
-                    Right = null!,
-                    Line = left.Line,
-                    Column = left.Column
-                };
-            }
+                Left = left,
+                Operator = operatorToken,
+                Right = right,
+                Line = left.Line,
+                Column = left.Column
+            };
         }
 
         private AST_Expr_Additive ParseAdditive()
@@ -457,14 +428,12 @@ namespace Narratoria.Core
                 Line = left.Line,
                 Column = left.Column
             };
-
             while (Match(TokenType.Plus, TokenType.Minus))
             {
                 var operatorToken = Consume();
                 var right = ParseMultiplicative();
                 node.Rights.Add((operatorToken, right));
             }
-
             return node;
         }
 
@@ -477,14 +446,12 @@ namespace Narratoria.Core
                 Line = left.Line,
                 Column = left.Column
             };
-
             while (Match(TokenType.Multiply, TokenType.Divide, TokenType.Modulo))
             {
                 var operatorToken = Consume();
                 var right = ParsePower();
                 node.Rights.Add((operatorToken, right));
             }
-
             return node;
         }
 
@@ -527,13 +494,7 @@ namespace Narratoria.Core
         {
             if (Match(TokenType.Number, TokenType.Boolean, TokenType.Variable))
             {
-                var literalToken = Consume();
-                return new AST_Literal
-                {
-                    Value = literalToken,
-                    Line = literalToken.Line,
-                    Column = literalToken.Column
-                };
+                return ParseLiteral();
             }
             if (Match(TokenType.Fstring_Quote))
             {
@@ -547,15 +508,7 @@ namespace Narratoria.Core
                 }
                 else
                 {
-                    Expect(TokenType.LBrace, "Expected '{' to start embedded expression.");
-                    var expr = ParseExpression();
-                    Expect(TokenType.RBrace, "Expected '}' to end embedded expression.");
-                    return new AST_EmbedExpr
-                    {
-                        Expression = expr,
-                        Line = expr.Line,
-                        Column = expr.Column
-                    };
+                    return ParseEmbedExpr();
                 }
             }
             if (Match(TokenType.LParen))
@@ -571,6 +524,17 @@ namespace Narratoria.Core
                 };
             }
             throw new Exception($"Unexpected token {Current.Type} at line {Current.Line}, column {Current.Column}.");
+        }
+
+        private AST_Literal ParseLiteral()
+        {
+            var literalToken = Expect(TokenType.Number, TokenType.Boolean, TokenType.Variable);
+            return new AST_Literal
+            {
+                Value = literalToken,
+                Line = literalToken.Line,
+                Column = literalToken.Column
+            };
         }
 
         private AST_FString ParseFString()
@@ -605,7 +569,6 @@ namespace Narratoria.Core
                 {
                     throw new Exception($"Unexpected token {Current.Type} in f-string at line {Current.Line}, column {Current.Column}.");
                 }
-
             }
             Expect(TokenType.Fstring_Quote, "Expected '\"' to end f-string.");
             return fstring;
@@ -637,6 +600,19 @@ namespace Narratoria.Core
                 Call = call,
                 Line = call.Line,
                 Column = call.Column
+            };
+        }
+
+        private AST_EmbedExpr ParseEmbedExpr()
+        {
+            Expect(TokenType.LBrace, "Expected '{' to start embedded expression.");
+            var expr = ParseExpression();
+            Expect(TokenType.RBrace, "Expected '}' to end embedded expression.");
+            return new AST_EmbedExpr
+            {
+                Expression = expr,
+                Line = expr.Line,
+                Column = expr.Column
             };
         }
     }

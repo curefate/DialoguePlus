@@ -11,7 +11,7 @@ public class Program
         {
             Console.WriteLine(token);
         }
-        /* var parser = new Parser(tokens);
+        var parser = new Parser(tokens);
         var program = parser.Parse();
         Console.WriteLine("======================== AST =====================");
         foreach (var import in program.Imports)
@@ -25,6 +25,6 @@ public class Program
         foreach (var label in program.Labels)
         {
             Console.WriteLine($"Label: {label.LabelName.Text}, Statements: {label.Statements.Count}");
-        } */
+        }
     }
 }
