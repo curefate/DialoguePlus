@@ -8,7 +8,7 @@ namespace Narratoria.Core
         public abstract T Accept<T>(IASTVisitor<T> visitor);
     }
 
-    public class ASTRoot : ASTNode
+    public class AST_Program : ASTNode
     {
         public List<AST_Import> Imports { get; } = [];
         public List<AST_Statement> TopLevelStatements { get; } = [];
@@ -178,7 +178,7 @@ namespace Narratoria.Core
 
     public interface IASTVisitor<T>
     {
-        T VisitProgram(ASTRoot node);
+        T VisitProgram(AST_Program node);
         T VisitImport(AST_Import node);
         T VisitLabelBlock(AST_LabelBlock node);
         T VisitDialogue(AST_Dialogue node);
@@ -205,10 +205,10 @@ namespace Narratoria.Core
         T VisitEmbedExpr(AST_EmbedExpr node);
     }
 
-    public abstract class SyntaxVisitorBase<T> : IASTVisitor<T>
+    public abstract class SyntaxBaseVisitor<T> : IASTVisitor<T>
     {
         public virtual T Visit(ASTNode node) => node.Accept(this);
-        public virtual T VisitProgram(ASTRoot node) => default!;
+        public virtual T VisitProgram(AST_Program node) => default!;
         public virtual T VisitImport(AST_Import node) => default!;
         public virtual T VisitLabelBlock(AST_LabelBlock node) => default!;
         public virtual T VisitDialogue(AST_Dialogue node) => default!;

@@ -9,7 +9,6 @@ namespace Narratoria.Core
         {
             _tokens = [.. tokens];
         }
-
         public Parser(List<Token> tokens)
         {
             _tokens = tokens;
@@ -52,9 +51,9 @@ namespace Narratoria.Core
             }
         }
 
-        public ASTRoot Parse()
+        public AST_Program Parse()
         {
-            var program = new ASTRoot();
+            var program = new AST_Program();
 
             while (Match(TokenType.Import))
             {
@@ -343,7 +342,12 @@ namespace Narratoria.Core
             return ifNode;
         }
 
-        private AST_Expr_Or ParseExpression()
+        private AST_Expression ParseExpression()
+        {
+            return ParseOr();
+        }
+
+        private AST_Expr_Or ParseOr()
         {
             var left = ParseAnd();
             var node = new AST_Expr_Or
