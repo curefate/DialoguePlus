@@ -108,6 +108,13 @@ namespace Narratoria.Core
             return new Expression(new BinaryOperationNode(BinaryOperator.Modulo, left._root, right._root));
         }
 
+        public static Expression Power(Expression left, Expression right)
+        {
+            if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
+            if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
+            return new Expression(new BinaryOperationNode(BinaryOperator.Power, left._root, right._root));
+        }
+
         public static Expression Equal(Expression left, Expression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
@@ -568,6 +575,24 @@ namespace Narratoria.Core
                     {
                         throw new InvalidOperationException($"Modulus is not supported for types {Left.Type} and {Right.Type}.");
                     }
+                case BinaryOperator.Power:
+                    Type = NumTypeChecker(leftValue, rightValue);
+                    if (Type == typeof(int))
+                    {
+                        return (int)Math.Pow(Convert.ToInt32(leftValue), Convert.ToInt32(rightValue));
+                    }
+                    else if (Type == typeof(float))
+                    {
+                        return (float)Math.Pow(Convert.ToSingle(leftValue), Convert.ToSingle(rightValue));
+                    }
+                    else if (Type == typeof(double))
+                    {
+                        return Math.Pow(Convert.ToDouble(leftValue), Convert.ToDouble(rightValue));
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Exponentiation is not supported for types {Left.Type} and {Right.Type}.");
+                    }
                 case BinaryOperator.Equal:
                     Type = typeof(bool);
                     if (Left.Type == Right.Type)
@@ -727,6 +752,7 @@ namespace Narratoria.Core
         Multiply,
         Divide,
         Modulo,
+        Power,
         Equal,
         NotEqual,
         LessThan,

@@ -65,7 +65,7 @@ namespace Narratoria.Core
                         yield return new Token
                         {
                             Type = TokenType.Indent,
-                            Text = "",
+                            Lexeme = "",
                             Line = _line,
                             Column = _column
                         };
@@ -78,7 +78,7 @@ namespace Narratoria.Core
                             yield return new Token
                             {
                                 Type = TokenType.Dedent,
-                                Text = "",
+                                Lexeme = "",
                                 Line = _line,
                                 Column = _column
                             };
@@ -106,7 +106,7 @@ namespace Narratoria.Core
                                 yield return new Token
                                 {
                                     Type = TokenType.Error,
-                                    Text = errorBuffer.ToString(),
+                                    Lexeme = errorBuffer.ToString(),
                                     Line = _line,
                                     Column = _column - errorBuffer.Length
                                 };
@@ -123,7 +123,7 @@ namespace Narratoria.Core
                                 yield return new Token
                                 {
                                     Type = pattern.Type,
-                                    Text = match.Value,
+                                    Lexeme = match.Value,
                                     Line = _line,
                                     Column = _column
                                 };
@@ -149,7 +149,7 @@ namespace Narratoria.Core
                     yield return new Token
                     {
                         Type = TokenType.Error,
-                        Text = errorBuffer.ToString(),
+                        Lexeme = errorBuffer.ToString(),
                         Line = _line,
                         Column = _column - errorBuffer.Length
                     };
@@ -166,7 +166,7 @@ namespace Narratoria.Core
                     yield return new Token
                     {
                         Type = TokenType.Dedent,
-                        Text = "",
+                        Lexeme = "",
                         Line = _line,
                         Column = _column
                     };
@@ -176,7 +176,7 @@ namespace Narratoria.Core
             yield return new Token
             {
                 Type = TokenType.EOF,
-                Text = "",
+                Lexeme = "",
                 Line = _line,
                 Column = _column
             };

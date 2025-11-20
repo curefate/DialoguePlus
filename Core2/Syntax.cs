@@ -104,17 +104,17 @@ namespace Narratoria.Core
     public class AST_Expr_Or : AST_Expression
     {
         public required AST_Expr_And Left { get; init; }
-        public List<(Token Operator, AST_Expr_And Right)> Rights { get; } = [];
+        public List<AST_Expr_And> Rights { get; } = [];
         public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitExprOr(this);
-        public override List<ASTNode> Children => [Left, .. Rights.Select(r => r.Right)];
+        public override List<ASTNode> Children => [Left, .. Rights];
     }
 
     public class AST_Expr_And : AST_Expression
     {
         public required AST_Expr_Equality Left { get; init; }
-        public List<(Token Operator, AST_Expr_Equality Right)> Rights { get; } = [];
+        public List<AST_Expr_Equality> Rights { get; } = [];
         public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitExprAnd(this);
-        public override List<ASTNode> Children => [Left, .. Rights.Select(r => r.Right)];
+        public override List<ASTNode> Children => [Left, .. Rights];
     }
 
     public class AST_Expr_Equality : AST_Expression
@@ -202,188 +202,189 @@ namespace Narratoria.Core
 
     public interface IASTVisitor<T>
     {
-        T VisitProgram(AST_Program node);
-        T VisitImport(AST_Import node);
-        T VisitLabelBlock(AST_LabelBlock node);
-        T VisitDialogue(AST_Dialogue node);
-        T VisitMenu(AST_Menu node);
-        T VisitMenuItem(AST_MenuItem node);
-        T VisitJump(AST_Jump node);
-        T VisitTour(AST_Tour node);
-        T VisitCall(AST_Call node);
-        T VisitAssign(AST_Assign node);
-        T VisitIf(AST_If node);
+        T VisitProgram(AST_Program context);
+        T VisitImport(AST_Import context);
+        T VisitLabelBlock(AST_LabelBlock context);
 
-        T VisitExprOr(AST_Expr_Or node);
-        T VisitExprAnd(AST_Expr_And node);
-        T VisitExprEquality(AST_Expr_Equality node);
-        T VisitExprComparison(AST_Expr_Comparison node);
-        T VisitExprAdditive(AST_Expr_Additive node);
-        T VisitExprMultiplicative(AST_Expr_Multiplicative node);
-        T VisitExprPower(AST_Expr_Power node);
-        T VisitExprUnary(AST_Expr_Unary node);
+        T VisitDialogue(AST_Dialogue context);
+        T VisitMenu(AST_Menu context);
+        T VisitMenuItem(AST_MenuItem context);
+        T VisitJump(AST_Jump context);
+        T VisitTour(AST_Tour context);
+        T VisitCall(AST_Call context);
+        T VisitAssign(AST_Assign context);
+        T VisitIf(AST_If context);
 
-        T VisitLiteral(AST_Literal node);
-        T VisitFString(AST_FString node);
-        T VisitEmbedCall(AST_EmbedCall node);
-        T VisitEmbedExpr(AST_EmbedExpr node);
+        T VisitExprOr(AST_Expr_Or context);
+        T VisitExprAnd(AST_Expr_And context);
+        T VisitExprEquality(AST_Expr_Equality context);
+        T VisitExprComparison(AST_Expr_Comparison context);
+        T VisitExprAdditive(AST_Expr_Additive context);
+        T VisitExprMultiplicative(AST_Expr_Multiplicative context);
+        T VisitExprPower(AST_Expr_Power context);
+        T VisitExprUnary(AST_Expr_Unary context);
+
+        T VisitLiteral(AST_Literal context);
+        T VisitFString(AST_FString context);
+        T VisitEmbedCall(AST_EmbedCall context);
+        T VisitEmbedExpr(AST_EmbedExpr context);
     }
 
     public abstract class SyntaxBaseVisitor<T> : IASTVisitor<T>
     {
-        public T Visit(ASTNode node)
+        public T Visit(ASTNode context)
         {
-            return node switch
+            return context switch
             {
-                AST_Program n => VisitProgram(n),
-                AST_Import n => VisitImport(n),
-                AST_LabelBlock n => VisitLabelBlock(n),
-                AST_Dialogue n => VisitDialogue(n),
-                AST_Menu n => VisitMenu(n),
-                AST_MenuItem n => VisitMenuItem(n),
-                AST_Jump n => VisitJump(n),
-                AST_Tour n => VisitTour(n),
-                AST_Call n => VisitCall(n),
-                AST_Assign n => VisitAssign(n),
-                AST_If n => VisitIf(n),
-                AST_Expr_Or n => VisitExprOr(n),
-                AST_Expr_And n => VisitExprAnd(n),
-                AST_Expr_Equality n => VisitExprEquality(n),
-                AST_Expr_Comparison n => VisitExprComparison(n),
-                AST_Expr_Additive n => VisitExprAdditive(n),
-                AST_Expr_Multiplicative n => VisitExprMultiplicative(n),
-                AST_Expr_Power n => VisitExprPower(n),
-                AST_Expr_Unary n => VisitExprUnary(n),
-                AST_Literal n => VisitLiteral(n),
-                AST_FString n => VisitFString(n),
-                AST_EmbedCall n => VisitEmbedCall(n),
-                AST_EmbedExpr n => VisitEmbedExpr(n),
-                _ => throw new NotImplementedException($"No visit method for {node.GetType().Name}")
+                AST_Program c => VisitProgram(c),
+                AST_Import c => VisitImport(c),
+                AST_LabelBlock c => VisitLabelBlock(c),
+                AST_Dialogue c => VisitDialogue(c),
+                AST_Menu c => VisitMenu(c),
+                AST_MenuItem c => VisitMenuItem(c),
+                AST_Jump c => VisitJump(c),
+                AST_Tour c => VisitTour(c),
+                AST_Call c => VisitCall(c),
+                AST_Assign c => VisitAssign(c),
+                AST_If c => VisitIf(c),
+                AST_Expr_Or c => VisitExprOr(c),
+                AST_Expr_And c => VisitExprAnd(c),
+                AST_Expr_Equality c => VisitExprEquality(c),
+                AST_Expr_Comparison c => VisitExprComparison(c),
+                AST_Expr_Additive c => VisitExprAdditive(c),
+                AST_Expr_Multiplicative c => VisitExprMultiplicative(c),
+                AST_Expr_Power c => VisitExprPower(c),
+                AST_Expr_Unary c => VisitExprUnary(c),
+                AST_Literal c => VisitLiteral(c),
+                AST_FString c => VisitFString(c),
+                AST_EmbedCall c => VisitEmbedCall(c),
+                AST_EmbedExpr c => VisitEmbedExpr(c),
+                _ => throw new NotImplementedException($"No visit method for {context.GetType().Name}")
             };
         }
-        protected void VisitAllChildren(ASTNode node)
+        protected void VisitAllChildren(ASTNode context)
         {
-            foreach (var child in node.Children)
+            foreach (var child in context.Children)
             {
                 Visit(child);
             }
         }
 
-        public virtual T VisitProgram(AST_Program node)
+        public virtual T VisitProgram(AST_Program context)
         {
-            VisitAllChildren(node);
+            VisitAllChildren(context);
             return default!;
         }
-        public virtual T VisitImport(AST_Import node)
+        public virtual T VisitImport(AST_Import context)
         {
-            VisitAllChildren(node);
+            VisitAllChildren(context);
             return default!;
         }
-        public virtual T VisitLabelBlock(AST_LabelBlock node)
+        public virtual T VisitLabelBlock(AST_LabelBlock context)
         {
-            VisitAllChildren(node);
+            VisitAllChildren(context);
             return default!;
         }
-        public virtual T VisitDialogue(AST_Dialogue node)
+        public virtual T VisitDialogue(AST_Dialogue context)
         {
-            VisitAllChildren(node);
+            VisitAllChildren(context);
             return default!;
         }
-        public virtual T VisitMenu(AST_Menu node)
+        public virtual T VisitMenu(AST_Menu context)
         {
-            VisitAllChildren(node);
+            VisitAllChildren(context);
             return default!;
         }
-        public virtual T VisitMenuItem(AST_MenuItem node)
+        public virtual T VisitMenuItem(AST_MenuItem context)
         {
-            VisitAllChildren(node);
+            VisitAllChildren(context);
             return default!;
         }
-        public virtual T VisitJump(AST_Jump node)
+        public virtual T VisitJump(AST_Jump context)
         {
-            VisitAllChildren(node);
+            VisitAllChildren(context);
             return default!;
         }
-        public virtual T VisitTour(AST_Tour node)
+        public virtual T VisitTour(AST_Tour context)
         {
-            VisitAllChildren(node);
+            VisitAllChildren(context);
             return default!;
         }
-        public virtual T VisitCall(AST_Call node)
+        public virtual T VisitCall(AST_Call context)
         {
-            VisitAllChildren(node);
+            VisitAllChildren(context);
             return default!;
         }
-        public virtual T VisitAssign(AST_Assign node)
+        public virtual T VisitAssign(AST_Assign context)
         {
-            VisitAllChildren(node);
+            VisitAllChildren(context);
             return default!;
         }
-        public virtual T VisitIf(AST_If node)
+        public virtual T VisitIf(AST_If context)
         {
-            VisitAllChildren(node);
-            return default!;
-        }
-
-        public virtual T VisitExprOr(AST_Expr_Or node)
-        {
-            VisitAllChildren(node);
-            return default!;
-        }
-        public virtual T VisitExprAnd(AST_Expr_And node)
-        {
-            VisitAllChildren(node);
-            return default!;
-        }
-        public virtual T VisitExprEquality(AST_Expr_Equality node)
-        {
-            VisitAllChildren(node);
-            return default!;
-        }
-        public virtual T VisitExprComparison(AST_Expr_Comparison node)
-        {
-            VisitAllChildren(node);
-            return default!;
-        }
-        public virtual T VisitExprAdditive(AST_Expr_Additive node)
-        {
-            VisitAllChildren(node);
-            return default!;
-        }
-        public virtual T VisitExprMultiplicative(AST_Expr_Multiplicative node)
-        {
-            VisitAllChildren(node);
-            return default!;
-        }
-        public virtual T VisitExprPower(AST_Expr_Power node)
-        {
-            VisitAllChildren(node);
-            return default!;
-        }
-        public virtual T VisitExprUnary(AST_Expr_Unary node)
-        {
-            VisitAllChildren(node);
+            VisitAllChildren(context);
             return default!;
         }
 
-        public virtual T VisitLiteral(AST_Literal node)
+        public virtual T VisitExprOr(AST_Expr_Or context)
         {
-            VisitAllChildren(node);
+            VisitAllChildren(context);
             return default!;
         }
-        public virtual T VisitFString(AST_FString node)
+        public virtual T VisitExprAnd(AST_Expr_And context)
         {
-            VisitAllChildren(node);
+            VisitAllChildren(context);
             return default!;
         }
-        public virtual T VisitEmbedCall(AST_EmbedCall node)
+        public virtual T VisitExprEquality(AST_Expr_Equality context)
         {
-            VisitAllChildren(node);
+            VisitAllChildren(context);
             return default!;
         }
-        public virtual T VisitEmbedExpr(AST_EmbedExpr node)
+        public virtual T VisitExprComparison(AST_Expr_Comparison context)
         {
-            VisitAllChildren(node);
+            VisitAllChildren(context);
+            return default!;
+        }
+        public virtual T VisitExprAdditive(AST_Expr_Additive context)
+        {
+            VisitAllChildren(context);
+            return default!;
+        }
+        public virtual T VisitExprMultiplicative(AST_Expr_Multiplicative context)
+        {
+            VisitAllChildren(context);
+            return default!;
+        }
+        public virtual T VisitExprPower(AST_Expr_Power context)
+        {
+            VisitAllChildren(context);
+            return default!;
+        }
+        public virtual T VisitExprUnary(AST_Expr_Unary context)
+        {
+            VisitAllChildren(context);
+            return default!;
+        }
+
+        public virtual T VisitLiteral(AST_Literal context)
+        {
+            VisitAllChildren(context);
+            return default!;
+        }
+        public virtual T VisitFString(AST_FString context)
+        {
+            VisitAllChildren(context);
+            return default!;
+        }
+        public virtual T VisitEmbedCall(AST_EmbedCall context)
+        {
+            VisitAllChildren(context);
+            return default!;
+        }
+        public virtual T VisitEmbedExpr(AST_EmbedExpr context)
+        {
+            VisitAllChildren(context);
             return default!;
         }
     }

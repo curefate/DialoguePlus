@@ -16,7 +16,7 @@ public class Program
         Console.WriteLine("======================== AST =====================");
         foreach (var import in program.Imports)
         {
-            Console.WriteLine($"Import: {import.Path.Text}");
+            Console.WriteLine($"Import: {import.Path.Lexeme}");
         }
         foreach (var stmt in program.TopLevelStatements)
         {
@@ -24,7 +24,7 @@ public class Program
         }
         foreach (var label in program.Labels)
         {
-            Console.WriteLine($"Label: {label.LabelName.Text}, Statements: {label.Statements.Count}");
+            Console.WriteLine($"Label: {label.LabelName.Lexeme}, Statements: {label.Statements.Count}");
         }
     }
 }

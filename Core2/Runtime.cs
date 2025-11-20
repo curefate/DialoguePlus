@@ -5,12 +5,12 @@ namespace Narratoria.Core
         public readonly VariableRegistry Variables = new();
         public readonly FunctionRegistry Functions = new();
 
-        private readonly Dictionary<string, SemanticLabel> labelHub = [];
-        private readonly LinkedList<SemanticNode> executionQueue = new();
+        private readonly Dictionary<string, SIR_Label> labelHub = [];
+        private readonly LinkedList<SIR> executionQueue = new();
 
         public bool HasNext => executionQueue.Count > 0;
 
-        public void Read(SemanticLabel block)
+        public void Read(SIR_Label block)
         {
             if (block == null)
             {
@@ -23,7 +23,7 @@ namespace Narratoria.Core
             labelHub[block.LabelName] = block;
         }
 
-        public void Read(Dictionary<string, SemanticLabel> blocks)
+        public void Read(Dictionary<string, SIR_Label> blocks)
         {
             if (blocks == null || blocks.Count == 0)
             {
@@ -35,7 +35,7 @@ namespace Narratoria.Core
             }
         }
 
-        public SemanticLabel GetLabelNode(string labelName)
+        public SIR_Label GetLabelNode(string labelName)
         {
             if (string.IsNullOrEmpty(labelName))
             {
@@ -67,7 +67,7 @@ namespace Narratoria.Core
             labelHub.Clear();
         }
 
-        public void Enqueue(SemanticNode instruction, bool fromHead = false)
+        public void Enqueue(SIR instruction, bool fromHead = false)
         {
             if (instruction == null)
             {
@@ -83,7 +83,7 @@ namespace Narratoria.Core
             }
         }
 
-        public void Enqueue(List<SemanticNode> instructions, bool fromHead = false)
+        public void Enqueue(List<SIR> instructions, bool fromHead = false)
         {
             if (instructions == null || instructions.Count == 0)
             {
@@ -105,7 +105,7 @@ namespace Narratoria.Core
             }
         }
 
-        public SemanticNode? LA(int offset = 0)
+        public SIR? LA(int offset = 0)
         {
             if (offset < 0 || offset >= executionQueue.Count)
             {
@@ -123,7 +123,7 @@ namespace Narratoria.Core
             return node.Value;
         }
 
-        public SemanticNode Pop()
+        public SIR Pop()
         {
             if (executionQueue.Count == 0)
             {

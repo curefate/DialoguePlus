@@ -32,9 +32,9 @@ namespace Narratoria.Core
     public class Token
     {
         public TokenType Type;
-        public required string Text;
+        public required string Lexeme;
         public int Line;
         public int Column;
-        public override string ToString() => $"({Line},{Column})".PadRight(15) + $"[{Type}]".PadRight(25) + Text;
+        public override string ToString() => $"({Line},{Column})".PadRight(15) + $"[{Type}]".PadRight(25) + Lexeme;
     }
 }

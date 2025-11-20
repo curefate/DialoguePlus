@@ -360,7 +360,7 @@ namespace Narratoria.Core
             {
                 var operatorToken = Consume();
                 var right = ParseAnd();
-                node.Rights.Add((operatorToken, right));
+                node.Rights.Add(right);
             }
             return node;
         }
@@ -378,7 +378,7 @@ namespace Narratoria.Core
             {
                 var operatorToken = Consume();
                 var right = ParseEquality();
-                node.Rights.Add((operatorToken, right));
+                node.Rights.Add(right);
             }
             return node;
         }
@@ -563,7 +563,7 @@ namespace Narratoria.Core
                         new Token
                         {
                             Type = TokenType.PlaceHolder,
-                            Text = "{expr}",
+                            Lexeme = "{expr}",
                             Line = Current.Line,
                             Column = Current.Column
                         }
