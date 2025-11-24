@@ -35,7 +35,7 @@ namespace Narratoria.Core
             }
         }
 
-        public SIR_Label GetLabelNode(string labelName)
+        public SIR_Label GetLabelBlock(string labelName)
         {
             if (string.IsNullOrEmpty(labelName))
             {
@@ -59,7 +59,7 @@ namespace Narratoria.Core
                 throw new KeyNotFoundException($"Label '{LabelName}' not found in the LabelHub.");
             }
             executionQueue.Clear();
-            Enqueue(labelHub[LabelName].Nodes);
+            Enqueue(labelHub[LabelName].Statements);
         }
 
         public void ClearLabels()

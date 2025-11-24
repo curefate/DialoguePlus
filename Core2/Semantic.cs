@@ -2,8 +2,8 @@ namespace Narratoria.Core
 {
     public class SIRSet
     {
-        public List<SIR_Label> Labels { get; } = [];
-        public int Timestamp { get; init; }
+        public Dictionary<string, SIR_Label> Labels { get; } = [];
+        public long Timestamp { get; init; }
         public string SourcePath { get; init; } = string.Empty;
     }
 
@@ -17,7 +17,7 @@ namespace Narratoria.Core
     {
         public required string LabelName { get; init; }
         public required string Source { get; init; }
-        public List<SIR> Nodes { get; } = [];
+        public List<SIR> Statements { get; } = [];
     }
 
     public class SIR_Dialogue : SIR

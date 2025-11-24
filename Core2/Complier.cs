@@ -2,27 +2,125 @@ namespace Narratoria.Core
 {
     public class Compiler
     {
+        private readonly string _extension = ".narr";
         private readonly StmtBuilder _stmtBuilder = new();
+
         private readonly HashSet<string> _importedFiles = [];
         private readonly HashSet<string> _definedLabels = [];
 
-        private SIRSet _Compile(string filePath)
+        private SIRSet _Compile(string filePath, bool isRoot = false)
         {
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             {
                 throw new FileNotFoundException($"File not found: {filePath}");
             }
 
+            // Normalize file path
             filePath = Path.GetFullPath(filePath);
+            // Mark as imported
             _importedFiles.Add(filePath);
+            // Lexing and Parsing
+            var lexer = new Lexer(filePath);
+            var tokens = new List<Token>(lexer.Tokenize());
+            var parser = new Parser(tokens);
+            var ast = parser.Parse();
 
-            
+            var sirSet = new SIRSet
+            {
+                Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds(),
+                SourcePath = filePath,
+            };
+
+            // Handle imports
+            foreach (var import in ast.Imports)
+            {
+                var path = import.Path.Lexeme;
+                path = Path.IsPathFullyQualified(path) ? path : Path.GetFullPath(Path.Combine(Path.GetDirectoryName(filePath) ?? string.Empty, path));
+                if (string.IsNullOrEmpty(path))
+                {
+                    throw new Exception("Import path cannot be empty.");
+                }
+                if (!File.Exists(path))
+                {
+                    throw new FileNotFoundException($"Imported file not found: {path}");
+                }
+                if (!string.Equals(Path.GetExtension(path), _extension, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new Exception($"Imported file must have '{_extension}' extension: {path}");
+                }
+                if (_importedFiles.Contains(path))
+                {
+                    continue;
+                }
+                var importedSIRSet = _Compile(path, false);
+                foreach (var label in importedSIRSet.Labels)
+                {
+                    if (sirSet.Labels.ContainsKey(label.Key))
+                    {
+                        throw new Exception($"Duplicate label definition in imports: {label.Key}");
+                    }
+                    sirSet.Labels[label.Key] = label.Value;
+                }
+            }
+
+            // Handle top-level statements
+            if (isRoot)
+            {
+                SIR_Label topLevelLabel = new()
+                {
+                    LabelName = "__main__",
+                    Source = filePath,
+                };
+                _definedLabels.Add(topLevelLabel.LabelName);
+                _stmtBuilder.CurrentLabel = topLevelLabel.LabelName;
+                foreach (var stmt in ast.TopLevelStatements)
+                {
+                    var sir = _stmtBuilder.Visit(stmt);
+                    topLevelLabel.Statements.Add(sir);
+                }
+                sirSet.Labels[topLevelLabel.LabelName] = topLevelLabel;
+            }
+
+            // Handle labels
+            foreach (var label in ast.Labels)
+            {
+                if (_definedLabels.Contains(label.LabelName.Lexeme))
+                {
+                    throw new Exception($"Duplicate label definition: {label.LabelName.Lexeme}");
+                }
+                SIR_Label sirLabel = new()
+                {
+                    LabelName = label.LabelName.Lexeme,
+                    Source = filePath,
+                };
+                _definedLabels.Add(label.LabelName.Lexeme);
+                _stmtBuilder.CurrentLabel = label.LabelName.Lexeme;
+                foreach (var stmt in label.Statements)
+                {
+                    var sir = _stmtBuilder.Visit(stmt);
+                    sirLabel.Statements.Add(sir);
+                }
+                sirSet.Labels[sirLabel.LabelName] = sirLabel;
+            }
+
+            return sirSet;
+        }
+
+        public SIRSet Compile(string filePath)
+        {
+            _importedFiles.Clear();
+            _definedLabels.Clear();
+            return _Compile(filePath, true);
         }
     }
 
     internal class StmtBuilder : SyntaxBaseVisitor<SIR>
     {
         private readonly ExprBuilder _exprBuilder = new();
+
+        private readonly HashSet<string> _definedVariables = [];
+        private readonly HashSet<string> _usedLabels = [];
+
         public string CurrentLabel { get => _exprBuilder.CurrentLabel; set => _exprBuilder.CurrentLabel = value; }
 
         public override SIR VisitDialogue(AST_Dialogue context)
@@ -156,6 +254,8 @@ namespace Narratoria.Core
 
     internal class ExprBuilder : SyntaxBaseVisitor<Expression>
     {
+        private readonly HashSet<string> _definedVariables = [];
+
         public string CurrentLabel { get; set; } = string.Empty;
 
         public override Expression VisitExprOr(AST_Expr_Or context)
