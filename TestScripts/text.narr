@@ -1,7 +1,6 @@
-import blablabla.txt
 
 label A:
-    me "Hello!{call shake(0)}" #blablabla
+    me "Hello!" #blablabla
     "This is a \n test script!"
     speaker "1 plus 1 plus 1 equals {1+1+1} !"
     jump B
@@ -19,8 +18,7 @@ label B:
     else:
             "2"
     "option 1":
-        "option 1 item"
-        call end()
+        "option 1 item!!"
     "option 2":
-        "option 2 item"
+        "option 2 item!!"
     "bye"

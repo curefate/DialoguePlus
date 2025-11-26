@@ -378,7 +378,7 @@ namespace Narratoria.Core
         {
             return context.Value.Type switch
             {
-                TokenType.Number => Expression.Constant(double.Parse(context.Value.Lexeme)),
+                TokenType.Number => Expression.Constant(float.Parse(context.Value.Lexeme)),
                 TokenType.Boolean => Expression.Constant(bool.Parse(context.Value.Lexeme)),
                 TokenType.Variable => Expression.Variable(context.Value.Lexeme.Contains('.') ? context.Value.Lexeme[1..] : $"{CurrentLabel}.{context.Value.Lexeme[1..]}"),
                 _ => throw new NotImplementedException($"Unknown literal type: {context.Value.Type}"),

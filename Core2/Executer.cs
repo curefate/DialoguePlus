@@ -2,30 +2,64 @@ namespace Narratoria.Core
 {
     public class Executer
     {
-        public void Execute(Runtime runtime, SIR sIR)
+        private readonly LinkedList<SIR> _execQueue = new();
+        private SIRSet? _currentSet = null;
+
+        private readonly Runtime _runtime = new();
+        public Runtime Runtime => _runtime;
+
+        public virtual void Execute(SIRSet set, string? entranceLabel = null)
         {
-            switch (sIR)
+            _currentSet = set;
+            // Clear previous variables, but keep functions
+            _runtime.Variables.Clear();
+            _execQueue.Clear();
+
+            if (entranceLabel != null)
+            {
+                if (!_currentSet.Labels.TryGetValue(entranceLabel, out SIR_Label? entrance))
+                {
+                    throw new KeyNotFoundException($"(Runtime Error) Entrance label '{entranceLabel}' not found in SIR set.");
+                }
+                Enqueue(entrance.Statements);
+            }
+            else
+            {
+                Enqueue(_currentSet.Labels[_currentSet.EntranceLabel].Statements);
+            }
+
+            while (_execQueue.Count > 0)
+            {
+                var instruction = Dequeue();
+                Execute(instruction);
+            }
+        }
+
+        private void Execute(SIR instruction)
+        {
+            switch (instruction)
             {
                 case SIR_Dialogue dialogue:
-                    OnDialogue?.Invoke(runtime, dialogue);
+                    OnDialogue?.Invoke(_runtime, dialogue);
                     break;
                 case SIR_Menu menu:
-                    OnMenu?.Invoke(runtime, menu);
+                    int choice = OnMenu?.Invoke(_runtime, menu) ?? -1;
+                    PostOnMenu(menu, choice);
                     break;
                 case SIR_Jump jump:
-                    OnJump?.Invoke(runtime, jump);
+                    ExecuteJump(jump);
                     break;
                 case SIR_Tour tour:
-                    OnTour?.Invoke(runtime, tour);
+                    ExecuteTour(tour);
                     break;
                 case SIR_Call call:
-                    OnCall?.Invoke(runtime, call);
+                    ExecuteCall(call);
                     break;
                 case SIR_Assign assign:
-                    OnAssign?.Invoke(runtime, assign);
+                    ExecuteAssign(assign);
                     break;
                 case SIR_If ifStmt:
-                    OnIf?.Invoke(runtime, ifStmt);
+                    ExecuteIf(ifStmt);
                     break;
                 default:
                     throw new NotSupportedException($"(Runtime Error) Unsupported instruction type");
@@ -37,7 +71,7 @@ namespace Narratoria.Core
             Console.WriteLine($"(Dialogue) {statement.Speaker}: {statement.Text.Evaluate(runtime)}");
         };
 
-        public Action<Runtime, SIR_Menu> OnMenu = (runtime, statement) =>
+        public Func<Runtime, SIR_Menu, int> OnMenu = (runtime, statement) =>
         {
             Console.WriteLine("(Menu) Options:");
             for (int i = 0; i < statement.Options.Count; i++)
@@ -45,50 +79,47 @@ namespace Narratoria.Core
                 Console.WriteLine($"  {i + 1}. {statement.Options[i].Evaluate(runtime)}");
             }
             var input = Console.ReadLine();
-            if (int.TryParse(input, out int choice) && choice > 0 && choice <= statement.Blocks.Count)
+            int choice;
+            while (!int.TryParse(input, out choice) || choice < 1 || choice > statement.Options.Count)
             {
-                var selectedBlock = statement.Blocks[choice - 1];
-                runtime.Enqueue(selectedBlock, true);
+                Console.WriteLine("Invalid choice. Please enter a valid option number.");
+                input = Console.ReadLine();
             }
-            else
-            {
-                Console.WriteLine("(Menu) Invalid choice. No action taken.");
-            }
+            return choice - 1;
         };
 
-        private readonly Action<Runtime, SIR_Jump> OnJump = (runtime, statement) =>
+        private void PostOnMenu(SIR_Menu statement, int choice)
+        {
+            if (choice < 0 || choice >= statement.Blocks.Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(choice), "Choice index is out of range.");
+            }
+            var selectedBlock = statement.Blocks[choice];
+            Enqueue(selectedBlock, true);
+        }
+
+        private void ExecuteJump(SIR_Jump statement)
+        {
+
+            var target = _currentSet?.Labels[statement.TargetLabel] ?? throw new KeyNotFoundException($"(Runtime Error) Label '{statement.TargetLabel}' not found.[Ln {statement.Line}]");
+            _execQueue.Clear();
+            Enqueue(target.Statements);
+        }
+
+        private void ExecuteTour(SIR_Tour statement)
+        {
+
+            var target = _currentSet?.Labels[statement.TargetLabel] ?? throw new KeyNotFoundException($"(Runtime Error) Label '{statement.TargetLabel}' not found.[Ln {statement.Line}]");
+            Enqueue(target.Statements);
+
+        }
+
+        private void ExecuteCall(SIR_Call statement)
         {
             try
             {
-                var block = runtime.GetLabelBlock(statement.TargetLabel);
-                runtime.ClearQueue();
-                runtime.Enqueue(block.Statements);
-            }
-            catch (KeyNotFoundException)
-            {
-                throw new KeyNotFoundException($"(Runtime Error) Label '{statement.TargetLabel}' not found.[Ln {statement.Line}]");
-            }
-        };
-
-        private readonly Action<Runtime, SIR_Tour> OnTour = (runtime, statement) =>
-        {
-            try
-            {
-                var block = runtime.GetLabelBlock(statement.TargetLabel);
-                runtime.Enqueue(block.Statements, true);
-            }
-            catch (KeyNotFoundException)
-            {
-                throw new KeyNotFoundException($"(Runtime Error) Label '{statement.TargetLabel}' not found.[Ln {statement.Line}]");
-            }
-        };
-
-        private readonly Action<Runtime, SIR_Call> OnCall = (runtime, statement) =>
-        {
-            try
-            {
-                var args = statement.Arguments.Select(arg => arg.Evaluate(runtime)).ToArray();
-                runtime.Functions.Invoke(statement.FunctionName, args);
+                var args = statement.Arguments.Select(arg => arg.Evaluate(_runtime)).ToArray();
+                _runtime.Functions.Invoke(statement.FunctionName, args);
             }
             catch (KeyNotFoundException)
             {
@@ -98,42 +129,75 @@ namespace Narratoria.Core
             {
                 throw new InvalidOperationException($"(Runtime Error) Failed to call function '{statement.FunctionName}'. {ex.Message} [Ln {statement.Line}]", ex);
             }
-        };
+        }
 
-        private readonly Action<Runtime, SIR_Assign> OnAssign = (runtime, statement) =>
+        private void ExecuteAssign(SIR_Assign statement)
         {
             try
             {
-                statement.Expression.Evaluate(runtime);
+                statement.Expression.Evaluate(_runtime);
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"(Runtime Error) Failed to evaluate assignment. {ex.Message} [Ln {statement.Line}]", ex);
             }
-        };
+        }
 
-        private readonly Action<Runtime, SIR_If> OnIf = (runtime, statement) =>
+        private void ExecuteIf(SIR_If statement)
         {
             try
             {
-                var conditionResult = statement.Condition.Evaluate(runtime);
+                var conditionResult = statement.Condition.Evaluate(_runtime);
                 if (conditionResult == null || conditionResult is not bool)
                 {
                     throw new InvalidOperationException($"(Runtime Error) Condition must evaluate to a boolean value.");
                 }
                 if ((bool)conditionResult)
                 {
-                    runtime.Enqueue(statement.ThenBlock, true);
+                    Enqueue(statement.ThenBlock, true);
                 }
                 else
                 {
-                    runtime.Enqueue(statement.ElseBlock, true);
+                    Enqueue(statement.ElseBlock, true);
                 }
             }
             catch (Exception ex)
             {
                 throw new InvalidOperationException($"(Runtime Error) Failed to evaluate if condition. {ex.Message} [Ln {statement.Line}]", ex);
             }
-        };
+        }
+
+        private void Enqueue(List<SIR> instructions, bool toFront = false)
+        {
+            if (instructions == null || instructions.Count == 0)
+            {
+                throw new ArgumentException("Instructions list cannot be null or empty.", nameof(instructions));
+            }
+            if (toFront)
+            {
+                for (int i = instructions.Count - 1; i >= 0; i--)
+                {
+                    _execQueue.AddFirst(instructions[i]);
+                }
+            }
+            else
+            {
+                foreach (var instruction in instructions)
+                {
+                    _execQueue.AddLast(instruction);
+                }
+            }
+        }
+
+        private SIR Dequeue()
+        {
+            if (_execQueue.Count == 0)
+            {
+                throw new InvalidOperationException("Execution queue is empty.");
+            }
+            var instruction = _execQueue.First?.Value ?? throw new InvalidOperationException("Execution queue contains a null instruction.");
+            _execQueue.RemoveFirst();
+            return instruction;
+        }
     }
 }

@@ -4,7 +4,7 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        var lexer = new Lexer("../../../TestScripts/text.narr");
+        /* var lexer = new Lexer("../../../TestScripts/text.narr");
         var tokens = new List<Token>(lexer.Tokenize());
         Console.WriteLine("========================== Tokens ==========================");
         foreach (var token in tokens)
@@ -25,6 +25,11 @@ public class Program
         foreach (var label in program.Labels)
         {
             Console.WriteLine($"Label: {label.LabelName.Lexeme}, Statements: {label.Statements.Count}");
-        }
+        } */
+
+        var executer = new Executer();
+        var compiler = new Compiler();
+        var sirset = compiler.Compile("../../../TestScripts/text.narr");
+        executer.Execute(sirset, "A");
     }
 }
