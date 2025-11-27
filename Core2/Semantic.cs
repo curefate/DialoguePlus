@@ -5,7 +5,7 @@ namespace Narratoria.Core
         public Dictionary<string, SIR_Label> Labels { get; } = [];
         public long Timestamp { get; init; }
         public string SourcePath { get; init; } = string.Empty;
-        public string EntranceLabel { get; init; } = string.Empty;
+        public string EntranceLabel { get; init; } = "__main__";
     }
 
     public abstract class SIR

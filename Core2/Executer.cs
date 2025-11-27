@@ -110,7 +110,7 @@ namespace Narratoria.Core
         {
 
             var target = _currentSet?.Labels[statement.TargetLabel] ?? throw new KeyNotFoundException($"(Runtime Error) Label '{statement.TargetLabel}' not found.[Ln {statement.Line}]");
-            Enqueue(target.Statements);
+            Enqueue(target.Statements, true);
 
         }
 

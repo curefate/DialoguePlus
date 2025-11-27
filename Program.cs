@@ -23,13 +23,13 @@ public class Program
             Console.WriteLine($"Top Level Statement: {stmt}");
         }
         foreach (var label in program.Labels)
-        {
+        {   
             Console.WriteLine($"Label: {label.LabelName.Lexeme}, Statements: {label.Statements.Count}");
         } */
 
         var executer = new Executer();
         var compiler = new Compiler();
         var sirset = compiler.Compile("../../../TestScripts/text.narr");
-        executer.Execute(sirset, "A");
+        executer.Execute(sirset);
     }
 }
