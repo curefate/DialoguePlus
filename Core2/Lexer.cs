@@ -7,7 +7,7 @@ namespace Narratoria.Core
     {
         // Source Stream
         private readonly StreamReader _inputStream;
-        public string Source { get; init; } = "<unknown>";
+        public string SourceFile { get; init; } = string.Empty;
         private int _line = 0;
         private int _column = 1;
 
@@ -182,17 +182,12 @@ namespace Narratoria.Core
             };
         }
 
-        public Lexer(FileStream fileStream)
-        {
-            this._inputStream = new StreamReader(fileStream);
-            Source = fileStream.Name;
-        }
-
         public Lexer(string filePath)
         {
+            filePath = Path.GetFullPath(filePath);
             var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
             this._inputStream = new StreamReader(fileStream);
-            Source = filePath;
+            SourceFile = filePath;
         }
     }
 }

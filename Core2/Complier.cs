@@ -22,13 +22,13 @@ namespace Narratoria.Core
             // Lexing and Parsing
             var lexer = new Lexer(filePath);
             var tokens = new List<Token>(lexer.Tokenize());
-            var parser = new Parser(tokens);
+            var parser = new Parser(tokens, filePath);
             var ast = parser.Parse();
 
             var sirSet = new SIRSet
             {
                 Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds(),
-                SourcePath = filePath,
+                SourceFile = filePath,
             };
 
             // Handle imports
@@ -52,8 +52,8 @@ namespace Narratoria.Core
                 {
                     continue;
                 }
-                var importedSIRSet = _Compile(path, false);
-                foreach (var label in importedSIRSet.Labels)
+                var imported = _Compile(path, false);
+                foreach (var label in imported.Labels)
                 {
                     if (sirSet.Labels.ContainsKey(label.Key))
                     {
