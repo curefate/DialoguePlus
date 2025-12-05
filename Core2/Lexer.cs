@@ -36,7 +36,7 @@ namespace Narratoria.Core
         }
         private List<LexicalDefinition> CurrentPatterns => LexerPatterns.PatternsMap[CurrentMode];
 
-        public IEnumerable<Token> Tokenize()
+        public IEnumerable<Token> Tokenize() // TODO diagnostics
         {
             while (!_inputStream.EndOfStream)
             {

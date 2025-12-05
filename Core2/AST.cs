@@ -83,7 +83,7 @@ namespace Narratoria.Core
 
     public class AST_Assign : AST_Statement
     {
-        public required Token VariableName { get; init; }
+        public required Token Variable { get; init; }
         public required Token Operator { get; init; }
         public required AST_Expression Value { get; init; }
         public override T Accept<T>(IASTVisitor<T> visitor) => visitor.VisitAssign(this);
@@ -230,7 +230,7 @@ namespace Narratoria.Core
         T VisitEmbedExpr(AST_EmbedExpr context);
     }
 
-    public abstract class SyntaxBaseVisitor<T> : IASTVisitor<T>
+    public abstract class BaseVisitor<T> : IASTVisitor<T>
     {
         public T Visit(ASTNode context)
         {

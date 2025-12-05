@@ -28,8 +28,10 @@ public class Program
         } */
 
         var executer = new Executer();
-        var compiler = new Compiler();
+        var tableManager = new SymbolTableManager();
+        var compiler = new Compiler(tableManager);
         var sirset = compiler.Compile("../../../TestScripts/text.narr");
         executer.Execute(sirset);
+        Console.WriteLine(tableManager);
     }
 }

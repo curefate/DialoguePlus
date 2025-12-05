@@ -3,22 +3,23 @@ namespace Narratoria.Core
     public class Compiler
     {
         private readonly string _extension = ".narr";
-        private readonly StmtBuilder _stmtBuilder = new();
+        private readonly SymbolTableManager _tableManager;
+        public SymbolTableManager TableManager => _tableManager;
 
-        private readonly HashSet<string> _importedFiles = [];
-        private readonly HashSet<string> _definedLabels = [];
+        public Compiler(SymbolTableManager? tableManager = null)
+        {
+            _tableManager = tableManager ?? new SymbolTableManager();
+        }
 
-        private SIRSet _Compile(string filePath, bool isRoot = false)
+        private SIRSet _Compile(string filePath, HashSet<string> importedFiles, bool isRoot = false)
         {
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             {
                 throw new FileNotFoundException($"File not found: {filePath}");
             }
 
-            // Normalize file path
             filePath = Path.GetFullPath(filePath);
-            // Mark as imported
-            _importedFiles.Add(filePath);
+            importedFiles.Add(filePath);
             // Lexing and Parsing
             var lexer = new Lexer(filePath);
             var tokens = new List<Token>(lexer.Tokenize());
@@ -29,6 +30,10 @@ namespace Narratoria.Core
             {
                 Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds(),
                 SourceFile = filePath,
+            };
+            var table = new FileSymbolTable
+            {
+                FilePath = filePath,
             };
 
             // Handle imports
@@ -48,11 +53,11 @@ namespace Narratoria.Core
                 {
                     throw new Exception($"Imported file must have '{_extension}' extension: {path}");
                 }
-                if (_importedFiles.Contains(path))
+                if (importedFiles.Contains(path))
                 {
                     continue;
                 }
-                var imported = _Compile(path, false);
+                var imported = _Compile(path, importedFiles, false);
                 foreach (var label in imported.Labels)
                 {
                     if (sirSet.Labels.ContainsKey(label.Key))
@@ -70,58 +75,80 @@ namespace Narratoria.Core
                 {
                     LabelName = "__main__",
                     Source = filePath,
+                    Line = -1,
+                    Column = -1,
                 };
-                _definedLabels.Add(topLevelLabel.LabelName);
-                _stmtBuilder.CurrentLabel = topLevelLabel.LabelName;
+                IRBuilder builder = new(table);
                 foreach (var stmt in ast.TopLevelStatements)
                 {
-                    var sir = _stmtBuilder.Visit(stmt);
+                    var sir = builder.Visit(stmt);
                     topLevelLabel.Statements.Add(sir);
                 }
                 sirSet.Labels[topLevelLabel.LabelName] = topLevelLabel;
+                table.LabelDefs[topLevelLabel.LabelName] = new SymbolPosition
+                {
+                    FilePath = filePath,
+                    Line = -1,
+                    Column = -1,
+                };
             }
 
             // Handle labels
             foreach (var label in ast.Labels)
             {
-                if (_definedLabels.Contains(label.LabelName.Lexeme))
-                {
-                    throw new Exception($"Duplicate label definition: {label.LabelName.Lexeme}");
-                }
-                SIR_Label sirLabel = new()
-                {
-                    LabelName = label.LabelName.Lexeme,
-                    Source = filePath,
-                };
-                _definedLabels.Add(label.LabelName.Lexeme);
-                _stmtBuilder.CurrentLabel = label.LabelName.Lexeme;
-                foreach (var stmt in label.Statements)
-                {
-                    var sir = _stmtBuilder.Visit(stmt);
-                    sirLabel.Statements.Add(sir);
-                }
-                sirSet.Labels[sirLabel.LabelName] = sirLabel;
+                IRBuilder builder = new(table);
+                var labelBlock = (SIR_Label)builder.VisitLabelBlock(label);
+                sirSet.Labels[labelBlock.LabelName] = labelBlock;
             }
 
+            _tableManager.UpdateFileSymbols(table);
             return sirSet;
         }
 
         public SIRSet Compile(string filePath)
         {
-            _importedFiles.Clear();
-            _definedLabels.Clear();
-            return _Compile(filePath, true);
+            return _Compile(filePath, [], true);
         }
     }
 
-    internal class StmtBuilder : SyntaxBaseVisitor<SIR>
+    /// <summary>
+    /// IRBuilder converts AST nodes into SIR instructions.
+    /// </summary>
+    internal class IRBuilder : BaseVisitor<SIR>
     {
-        private readonly ExprBuilder _exprBuilder = new();
+        private readonly FileSymbolTable _table;
+        private ExprBuilder _exprBuilder;
 
-        private readonly HashSet<string> _definedVariables = [];
-        private readonly HashSet<string> _usedLabels = [];
 
-        public string CurrentLabel { get => _exprBuilder.CurrentLabel; set => _exprBuilder.CurrentLabel = value; }
+        public IRBuilder(FileSymbolTable table)
+        {
+            _table = table ?? throw new ArgumentNullException(nameof(table));
+            _exprBuilder = new ExprBuilder("__main__", _table);
+        }
+
+        public override SIR VisitLabelBlock(AST_LabelBlock context)
+        {
+            _exprBuilder = new ExprBuilder(context.LabelName.Lexeme, _table);
+            _table.LabelDefs[context.LabelName.Lexeme] = new SymbolPosition
+            {
+                FilePath = _table.FilePath,
+                Line = context.LabelName.Line,
+                Column = context.LabelName.Column,
+            };
+            SIR_Label label = new()
+            {
+                LabelName = context.LabelName.Lexeme,
+                Source = _table.FilePath,
+                Line = context.Line,
+                Column = context.Column,
+            };
+            foreach (var stmt in context.Statements)
+            {
+                var sir = Visit(stmt);
+                label.Statements.Add(sir);
+            }
+            return label;
+        }
 
         public override SIR VisitDialogue(AST_Dialogue context)
         {
@@ -152,6 +179,12 @@ namespace Narratoria.Core
 
         public override SIR VisitJump(AST_Jump context)
         {
+            _table.AddLabelUsage(context.TargetLabel.Lexeme, new SymbolPosition
+            {
+                FilePath = _table.FilePath,
+                Line = context.TargetLabel.Line,
+                Column = context.TargetLabel.Column,
+            });
             return new SIR_Jump
             {
                 Line = context.Line,
@@ -162,6 +195,12 @@ namespace Narratoria.Core
 
         public override SIR VisitTour(AST_Tour context)
         {
+            _table.AddLabelUsage(context.TargetLabel.Lexeme, new SymbolPosition
+            {
+                FilePath = _table.FilePath,
+                Line = context.TargetLabel.Line,
+                Column = context.TargetLabel.Column,
+            });
             return new SIR_Tour
             {
                 Line = context.Line,
@@ -184,9 +223,24 @@ namespace Narratoria.Core
 
         public override SIR VisitAssign(AST_Assign context)
         {
-            var value = _exprBuilder.Visit(context.Value);
-            var varName = context.VariableName.Lexeme.Contains('.') ? context.VariableName.Lexeme[1..] : $"{CurrentLabel}.{context.VariableName.Lexeme[1..]}";
+            var varName = _exprBuilder.GetVariableName(context.Variable);
+            _table.AddVariableUsage(varName, new SymbolPosition
+            {
+                FilePath = _table.FilePath,
+                Line = context.Value.Line,
+                Column = context.Value.Column,
+            });
+            if (!_table.VariableDefs.ContainsKey(varName))
+            {
+                _table.VariableDefs[varName] = new SymbolPosition
+                {
+                    FilePath = _table.FilePath,
+                    Line = context.Variable.Line,
+                    Column = context.Variable.Column,
+                };
+            }
             var variable = Expression.Variable(varName);
+            var value = _exprBuilder.Visit(context.Value);
             return context.Operator.Type switch
             {
                 TokenType.Assign => new SIR_Assign
@@ -252,11 +306,16 @@ namespace Narratoria.Core
         }
     }
 
-    internal class ExprBuilder : SyntaxBaseVisitor<Expression>
+    internal class ExprBuilder : BaseVisitor<Expression>
     {
-        private readonly HashSet<string> _definedVariables = [];
+        private readonly string _currentLabel;
+        private readonly FileSymbolTable _table;
 
-        public string CurrentLabel { get; set; } = string.Empty;
+        public ExprBuilder(string currentLabel, FileSymbolTable table)
+        {
+            _currentLabel = currentLabel;
+            _table = table;
+        }
 
         public override Expression VisitExprOr(AST_Expr_Or context)
         {
@@ -376,13 +435,29 @@ namespace Narratoria.Core
 
         public override Expression VisitLiteral(AST_Literal context)
         {
-            return context.Value.Type switch
+            switch (context.Value.Type)
             {
-                TokenType.Number => Expression.Constant(float.Parse(context.Value.Lexeme)),
-                TokenType.Boolean => Expression.Constant(bool.Parse(context.Value.Lexeme)),
-                TokenType.Variable => Expression.Variable(context.Value.Lexeme.Contains('.') ? context.Value.Lexeme[1..] : $"{CurrentLabel}.{context.Value.Lexeme[1..]}"),
-                _ => throw new NotImplementedException($"Unknown literal type: {context.Value.Type}"),
-            };
+                case TokenType.Number:
+                    return Expression.Constant(float.Parse(context.Value.Lexeme));
+                case TokenType.Boolean:
+                    return Expression.Constant(bool.Parse(context.Value.Lexeme));
+                case TokenType.Variable:
+                    var varName = GetVariableName(context.Value);
+                    _table.AddVariableUsage(varName, new SymbolPosition
+                    {
+                        FilePath = _table.FilePath,
+                        Line = context.Value.Line,
+                        Column = context.Value.Column,
+                    });
+                    return Expression.Variable(varName);
+                default:
+                    throw new NotImplementedException($"Unknown literal type: {context.Value.Type}");
+            }
+        }
+
+        public string GetVariableName(Token variableToken)
+        {
+            return variableToken.Lexeme.Contains('.') ? variableToken.Lexeme[1..] : $"{_currentLabel}.{variableToken.Lexeme[1..]}";
         }
 
         public override Expression VisitFString(AST_FString context)

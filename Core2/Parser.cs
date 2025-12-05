@@ -59,7 +59,7 @@ namespace Narratoria.Core
             }
         }
 
-        public AST_Program Parse()
+        public AST_Program Parse() //TODO diagnostics
         {
             var program = new AST_Program();
 
@@ -279,7 +279,7 @@ namespace Narratoria.Core
             Expect(TokenType.Linebreak, "Expected newline after assignment.");
             return new AST_Assign
             {
-                VariableName = variableToken,
+                Variable = variableToken,
                 Operator = assignToken,
                 Value = value,
                 Line = variableToken.Line,
