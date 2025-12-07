@@ -3,8 +3,21 @@ namespace Narratoria.Core
     using System.Text;
     using System.Text.RegularExpressions;
 
-    public class Lexer
+    public class Lexer : IDiagnosticReporter
     {
+        private readonly List<DiagnosticCollector> _collectors = [];
+        public void Report(Diagnostic diagnostic)
+        {
+            foreach (var collector in _collectors)
+            {
+                collector.Add(diagnostic);
+            }
+        }
+        public void AddCollector(DiagnosticCollector collector)
+        {
+            _collectors.Add(collector);
+        }
+
         // Source Stream
         private readonly StreamReader _inputStream;
         public string SourceFile { get; init; } = string.Empty;

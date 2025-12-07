@@ -1,19 +1,54 @@
+using System.Collections.Concurrent;
+
 namespace Narratoria.Core
 {
+    // Diagnostic
     public interface IDiagnosticReporter
     {
         void Report(Diagnostic diagnostic);
+        void AddCollector(DiagnosticCollector collector);
+    }
+
+    public class DiagnosticCollector
+    {
+        private readonly ConcurrentBag<Diagnostic> _bag = [];
+
+        public void Add(Diagnostic diagnostic)
+        {
+            _bag.Add(diagnostic);
+        }
+        
+        public List<Diagnostic> GetAll()
+        {
+            return [.. _bag];
+        }
     }
 
     public class Diagnostic
     {
-        public string Message { get; init; } = string.Empty;
+        public required string Message { get; init; }
         public int Line { get; init; }
         public int Column { get; init; }
-        public int Severity { get; init; } = 1; // 1: Error, 2: Warning, 3: Info
+        public TextSpan? Span { get; init; }
+        public SeverityLevel Severity { get; init; }
+
+        public enum SeverityLevel
+        {
+            Error = 1,
+            Warning = 2,
+            Info = 3
+        }
     }
 
+    public readonly struct TextSpan
+    {
+        public required int StartLine { get; init; }
+        public required int StartColumn { get; init; }
+        public required int EndLine { get; init; }
+        public required int EndColumn { get; init; }
+    }
 
+    // Symbol Table
     public class SymbolPosition
     {
         public required string FilePath { get; init; }

@@ -1,7 +1,20 @@
 namespace Narratoria.Core
 {
-    public class Compiler
+    public class Compiler : IDiagnosticReporter
     {
+        private readonly List<DiagnosticCollector> _collectors = [];
+        public void Report(Diagnostic diagnostic)
+        {
+            foreach (var collector in _collectors)
+            {
+                collector.Add(diagnostic);
+            }
+        }
+        public void AddCollector(DiagnosticCollector collector)
+        {
+            _collectors.Add(collector);
+        }
+
         private readonly string _extension = ".narr";
         private readonly SymbolTableManager _tableManager;
         public SymbolTableManager TableManager => _tableManager;
@@ -22,8 +35,16 @@ namespace Narratoria.Core
             importedFiles.Add(filePath);
             // Lexing and Parsing
             var lexer = new Lexer(filePath);
+            foreach (var collector in _collectors)
+            {
+                lexer.AddCollector(collector);
+            }
             var tokens = new List<Token>(lexer.Tokenize());
             var parser = new Parser(tokens, filePath);
+            foreach (var collector in _collectors)
+            {
+                parser.AddCollector(collector);
+            }
             var ast = parser.Parse();
 
             var sirSet = new SIRSet
@@ -35,6 +56,11 @@ namespace Narratoria.Core
             {
                 FilePath = filePath,
             };
+            IRBuilder builder = new(table);
+            foreach (var collector in _collectors)
+            {
+                builder.AddCollector(collector);
+            }
 
             // Handle imports
             foreach (var import in ast.Imports)
@@ -78,7 +104,6 @@ namespace Narratoria.Core
                     Line = -1,
                     Column = -1,
                 };
-                IRBuilder builder = new(table);
                 foreach (var stmt in ast.TopLevelStatements)
                 {
                     var sir = builder.Visit(stmt);
@@ -96,7 +121,6 @@ namespace Narratoria.Core
             // Handle labels
             foreach (var label in ast.Labels)
             {
-                IRBuilder builder = new(table);
                 var labelBlock = (SIR_Label)builder.VisitLabelBlock(label);
                 sirSet.Labels[labelBlock.LabelName] = labelBlock;
             }
@@ -117,8 +141,7 @@ namespace Narratoria.Core
     internal class IRBuilder : BaseVisitor<SIR>
     {
         private readonly FileSymbolTable _table;
-        private ExprBuilder _exprBuilder;
-
+        private readonly ExprBuilder _exprBuilder;
 
         public IRBuilder(FileSymbolTable table)
         {
@@ -126,9 +149,15 @@ namespace Narratoria.Core
             _exprBuilder = new ExprBuilder("__main__", _table);
         }
 
+        public override void AddCollector(DiagnosticCollector collector)
+        {
+            base.AddCollector(collector);
+            _exprBuilder.AddCollector(collector);
+        }
+
         public override SIR VisitLabelBlock(AST_LabelBlock context)
         {
-            _exprBuilder = new ExprBuilder(context.LabelName.Lexeme, _table);
+            _exprBuilder.SetCurrentLabel(context.LabelName.Lexeme);
             _table.LabelDefs[context.LabelName.Lexeme] = new SymbolPosition
             {
                 FilePath = _table.FilePath,
@@ -308,13 +337,18 @@ namespace Narratoria.Core
 
     internal class ExprBuilder : BaseVisitor<Expression>
     {
-        private readonly string _currentLabel;
+        private string _currentLabel;
         private readonly FileSymbolTable _table;
 
         public ExprBuilder(string currentLabel, FileSymbolTable table)
         {
             _currentLabel = currentLabel;
             _table = table;
+        }
+
+        public void SetCurrentLabel(string label)
+        {
+            _currentLabel = label;
         }
 
         public override Expression VisitExprOr(AST_Expr_Or context)

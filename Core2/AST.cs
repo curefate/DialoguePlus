@@ -230,8 +230,21 @@ namespace Narratoria.Core
         T VisitEmbedExpr(AST_EmbedExpr context);
     }
 
-    public abstract class BaseVisitor<T> : IASTVisitor<T>
+    public abstract class BaseVisitor<T> : IASTVisitor<T>, IDiagnosticReporter
     {
+        protected readonly List<DiagnosticCollector> _collectors = [];
+        public virtual void AddCollector(DiagnosticCollector collector)
+        {
+            _collectors.Add(collector);
+        }
+        public virtual void Report(Diagnostic diagnostic)
+        {
+            foreach (var collector in _collectors)
+            {
+                collector.Add(diagnostic);
+            }
+        }
+
         public T Visit(ASTNode context)
         {
             return context switch
