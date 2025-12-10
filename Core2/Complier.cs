@@ -56,18 +56,74 @@ namespace Narratoria.Core
                 path = Path.IsPathFullyQualified(path) ? path : Path.GetFullPath(Path.Combine(Path.GetDirectoryName(filePath) ?? string.Empty, path));
                 if (string.IsNullOrEmpty(path))
                 {
-                    throw new Exception("Import path cannot be empty.");
+                    Report(new Diagnostic
+                    {
+                        Message = "[Compiler] Import path cannot be empty.",
+                        Line = import.Path.Line,
+                        Column = import.Path.Column,
+                        Span = new TextSpan
+                        {
+                            StartLine = import.Path.Line,
+                            StartColumn = import.Path.Column,
+                            EndLine = import.Path.Line,
+                            EndColumn = import.Path.Column + import.Path.Lexeme.Length,
+                        },
+                        Severity = Diagnostic.SeverityLevel.Error,
+                    });
+                    continue;
                 }
                 if (!File.Exists(path))
                 {
-                    throw new FileNotFoundException($"Imported file not found: {path}");
+                    Report(new Diagnostic
+                    {
+                        Message = $"[Compiler] Imported file not found: {path}",
+                        Line = import.Path.Line,
+                        Column = import.Path.Column,
+                        Span = new TextSpan
+                        {
+                            StartLine = import.Path.Line,
+                            StartColumn = import.Path.Column,
+                            EndLine = import.Path.Line,
+                            EndColumn = import.Path.Column + import.Path.Lexeme.Length,
+                        },
+                        Severity = Diagnostic.SeverityLevel.Error,
+                    });
+                    continue;
                 }
                 if (!string.Equals(Path.GetExtension(path), _extension, StringComparison.OrdinalIgnoreCase))
                 {
-                    throw new Exception($"Imported file must have '{_extension}' extension: {path}");
+                    Report(new Diagnostic
+                    {
+                        Message = $"[Compiler] Imported file must have '{_extension}' extension: {path}",
+                        Line = import.Path.Line,
+                        Column = import.Path.Column,
+                        Span = new TextSpan
+                        {
+                            StartLine = import.Path.Line,
+                            StartColumn = import.Path.Column,
+                            EndLine = import.Path.Line,
+                            EndColumn = import.Path.Column + import.Path.Lexeme.Length,
+                        },
+                        Severity = Diagnostic.SeverityLevel.Error,
+                    });
+                    continue;
                 }
                 if (importedFiles.Contains(path))
                 {
+                    Report(new Diagnostic
+                    {
+                        Message = $"[Compiler] Circular import detected: {path}",
+                        Line = import.Path.Line,
+                        Column = import.Path.Column,
+                        Span = new TextSpan
+                        {
+                            StartLine = import.Path.Line,
+                            StartColumn = import.Path.Column,
+                            EndLine = import.Path.Line,
+                            EndColumn = import.Path.Column + import.Path.Lexeme.Length,
+                        },
+                        Severity = Diagnostic.SeverityLevel.Warning,
+                    });
                     continue;
                 }
                 var imported = _Compile(path, importedFiles, false);
@@ -75,7 +131,22 @@ namespace Narratoria.Core
                 {
                     if (sirSet.Labels.ContainsKey(label.Key))
                     {
-                        throw new Exception($"Duplicate label definition in imports: {label.Key}");
+                        Report(new Diagnostic
+                        {
+                            Message = $"[Compiler] Duplicate label definition \"{label.Key}\" in file: {filePath}",
+                            Line = label.Value.Line,
+                            Column = label.Value.Column,
+                            Span = new TextSpan
+                            {
+                                StartLine = label.Value.Line,
+                                StartColumn = label.Value.Column,
+                                EndLine = label.Value.Line,
+                                EndColumn = label.Value.Column + label.Key.Length,
+                            },
+                            Severity = Diagnostic.SeverityLevel.Error,
+                        });
+                        continue;
+                        // throw new Exception($"Duplicate label definition \"{label.Key}\" in file: {filePath}");
                     }
                     sirSet.Labels[label.Key] = label.Value;
                 }

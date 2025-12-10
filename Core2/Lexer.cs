@@ -146,6 +146,20 @@ namespace Narratoria.Core
                 // If there is any error char at the end of the line
                 if (errorBuffer.Length > 0)
                 {
+                    Report(new Diagnostic
+                    {
+                        Message = $"[Lexer] Unrecognized token: {errorBuffer}",
+                        Line = _line,
+                        Column = _column - errorBuffer.Length,
+                        Span = new TextSpan
+                        {
+                            StartLine = _line,
+                            StartColumn = _column - errorBuffer.Length,
+                            EndLine = _line,
+                            EndColumn = _column
+                        },
+                        Severity = Diagnostic.SeverityLevel.Error
+                    });
                     yield return new Token
                     {
                         Type = TokenType.Error,

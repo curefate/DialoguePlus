@@ -30,13 +30,13 @@ namespace Narratoria.Core
         private Token Expect(TokenType type, string message)
         {
             if (Current.Type == type) return Consume();
-            if (String.IsNullOrEmpty(message))
+            if (string.IsNullOrEmpty(message))
             {
-                throw new Exception($"Expected {type} but found {Current.Type}. [Ln {Current.Line}, Col {Current.Column}]");
+                throw new Exception($"Expected {type} but found {Current.Type}");
             }
             else
             {
-                throw new Exception(message + $" [Ln {Current.Line}, Col {Current.Column}]");
+                throw new Exception(message);
             }
         }
         private Token Expect(params TokenType[] types)
@@ -45,7 +45,7 @@ namespace Narratoria.Core
             {
                 if (Current.Type == type) return Consume();
             }
-            throw new Exception($"Expected one of [{string.Join(", ", types)}] but found {Current.Type}. [Ln {Current.Line}, Col {Current.Column}]");
+            throw new Exception($"Expected one of [{string.Join(", ", types)}] but found {Current.Type}.");
         }
         private bool HasColonInLine()
         {
@@ -83,9 +83,14 @@ namespace Narratoria.Core
                 }
                 catch (Exception ex)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.Error.WriteLine($"[Parser Error] {ex.Message}");
-                    Console.ResetColor();
+                    // 记录诊断信息
+                    Report(new Diagnostic
+                    {
+                        Message = $"[Parser] {ex.Message}",
+                        Line = Current.Line,
+                        Column = Current.Column,
+                        Severity = Diagnostic.SeverityLevel.Error
+                    });
 
                     // 错误恢复：跳过当前语句直到行尾或文件末尾
                     while (!Match(TokenType.EOF, TokenType.Linebreak))
@@ -95,9 +100,6 @@ namespace Narratoria.Core
 
                     if (Match(TokenType.Linebreak)) Consume();
                     while (Match(TokenType.Dedent, TokenType.Indent)) Consume();
-
-                    // 向外层抛出异常以供 IDE 或日志系统捕获
-                    // throw;
                 }
             }
 
@@ -157,7 +159,7 @@ namespace Narratoria.Core
             else if (Match(TokenType.Call)) return ParseCall();
             else if (Match(TokenType.Variable)) return ParseAssign();
             else if (Match(TokenType.If)) return ParseIf();
-            else throw new Exception($"Unexpected token {Current.Type}. [Ln {Current.Line}, Col {Current.Column}]");
+            else throw new Exception($"Unexpected token {Current.Type}.");
         }
 
         private AST_Dialogue ParseDialogue()
@@ -535,7 +537,7 @@ namespace Narratoria.Core
                     Column = expr.Column
                 };
             }
-            throw new Exception($"Unexpected token {Current.Type} at line {Current.Line}, column {Current.Column}.");
+            throw new Exception($"Unexpected token {Current.Type}.");
         }
 
         private AST_Literal ParseLiteral()
@@ -579,7 +581,7 @@ namespace Narratoria.Core
                 }
                 else
                 {
-                    throw new Exception($"Unexpected token {Current.Type} in f-string at line {Current.Line}, column {Current.Column}.");
+                    throw new Exception($"Unexpected token {Current.Type} in f-string.");
                 }
             }
             Expect(TokenType.Fstring_Quote, "Expected '\"' to end f-string.");

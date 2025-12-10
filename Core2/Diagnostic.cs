@@ -19,6 +19,11 @@ namespace Narratoria.Core
         {
             _listeners.Add(listener);
         }
+
+        public virtual void DetachDiagnosticListener(DiagnosticListener listener)
+        {
+            _listeners.Remove(listener);
+        }
     }
 
     public interface IDiagnosticReporter
@@ -30,10 +35,12 @@ namespace Narratoria.Core
     public class DiagnosticListener
     {
         private readonly ConcurrentBag<Diagnostic> _bag = [];
+        public readonly Dictionary<Diagnostic.SeverityLevel, int> Counts = [];
 
         public virtual void AddDiagnostic(Diagnostic diagnostic)
         {
             _bag.Add(diagnostic);
+            Counts[diagnostic.Severity]++;
         }
 
         public List<Diagnostic> GetAll()
