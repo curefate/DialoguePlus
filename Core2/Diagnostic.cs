@@ -3,24 +3,50 @@ using System.Collections.Concurrent;
 namespace Narratoria.Core
 {
     // Diagnostic
+    public abstract class BaseDiagnosticReporter : IDiagnosticReporter
+    {
+        protected readonly List<DiagnosticListener> _listeners = [];
+
+        public virtual void Report(Diagnostic diagnostic)
+        {
+            foreach (var listener in _listeners)
+            {
+                listener.AddDiagnostic(diagnostic);
+            }
+        }
+
+        public virtual void AttachDiagnosticListener(DiagnosticListener listener)
+        {
+            _listeners.Add(listener);
+        }
+    }
+
     public interface IDiagnosticReporter
     {
         void Report(Diagnostic diagnostic);
-        void AddCollector(DiagnosticCollector collector);
+        void AttachDiagnosticListener(DiagnosticListener listener);
     }
 
-    public class DiagnosticCollector
+    public class DiagnosticListener
     {
         private readonly ConcurrentBag<Diagnostic> _bag = [];
 
-        public void Add(Diagnostic diagnostic)
+        public virtual void AddDiagnostic(Diagnostic diagnostic)
         {
             _bag.Add(diagnostic);
         }
-        
+
         public List<Diagnostic> GetAll()
         {
             return [.. _bag];
+        }
+
+        public void Clear()
+        {
+            while (!_bag.IsEmpty)
+            {
+                _bag.TryTake(out _);
+            }
         }
     }
 
@@ -36,7 +62,8 @@ namespace Narratoria.Core
         {
             Error = 1,
             Warning = 2,
-            Info = 3
+            Info = 3,
+            Log = 4
         }
     }
 

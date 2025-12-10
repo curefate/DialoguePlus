@@ -1,20 +1,7 @@
 namespace Narratoria.Core
 {
-    public class Compiler : IDiagnosticReporter
+    public class Compiler : BaseDiagnosticReporter
     {
-        private readonly List<DiagnosticCollector> _collectors = [];
-        public void Report(Diagnostic diagnostic)
-        {
-            foreach (var collector in _collectors)
-            {
-                collector.Add(diagnostic);
-            }
-        }
-        public void AddCollector(DiagnosticCollector collector)
-        {
-            _collectors.Add(collector);
-        }
-
         private readonly string _extension = ".narr";
         private readonly SymbolTableManager _tableManager;
         public SymbolTableManager TableManager => _tableManager;
@@ -35,15 +22,15 @@ namespace Narratoria.Core
             importedFiles.Add(filePath);
             // Lexing and Parsing
             var lexer = new Lexer(filePath);
-            foreach (var collector in _collectors)
+            foreach (var listener in _listeners)
             {
-                lexer.AddCollector(collector);
+                lexer.AttachDiagnosticListener(listener);
             }
             var tokens = new List<Token>(lexer.Tokenize());
             var parser = new Parser(tokens, filePath);
-            foreach (var collector in _collectors)
+            foreach (var listener in _listeners)
             {
-                parser.AddCollector(collector);
+                parser.AttachDiagnosticListener(listener);
             }
             var ast = parser.Parse();
 
@@ -57,9 +44,9 @@ namespace Narratoria.Core
                 FilePath = filePath,
             };
             IRBuilder builder = new(table);
-            foreach (var collector in _collectors)
+            foreach (var listener in _listeners)
             {
-                builder.AddCollector(collector);
+                builder.AttachDiagnosticListener(listener);
             }
 
             // Handle imports
@@ -149,10 +136,10 @@ namespace Narratoria.Core
             _exprBuilder = new ExprBuilder("__main__", _table);
         }
 
-        public override void AddCollector(DiagnosticCollector collector)
+        public override void AttachDiagnosticListener(DiagnosticListener listener)
         {
-            base.AddCollector(collector);
-            _exprBuilder.AddCollector(collector);
+            base.AttachDiagnosticListener(listener);
+            _exprBuilder.AttachDiagnosticListener(listener);
         }
 
         public override SIR VisitLabelBlock(AST_LabelBlock context)

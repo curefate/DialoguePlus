@@ -1,20 +1,7 @@
 namespace Narratoria.Core
 {
-    public class Parser : IDiagnosticReporter
+    public class Parser : BaseDiagnosticReporter
     {
-        private readonly List<DiagnosticCollector> _collectors = [];
-        public void Report(Diagnostic diagnostic)
-        {
-            foreach (var collector in _collectors)
-            {
-                collector.Add(diagnostic);
-            }
-        }
-        public void AddCollector(DiagnosticCollector collector)
-        {
-            _collectors.Add(collector);
-        }
-
         private readonly List<Token> _tokens;
         private int _position = 0;
         public string SourceFile { get; init; } = string.Empty;
