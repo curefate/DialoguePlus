@@ -58,8 +58,36 @@ namespace Narratoria.Core
                 lookahead++;
             }
         }
+        private void Recover(Exception ex)
+        {
+            // 记录诊断信息
+            Report(new Diagnostic
+            {
+                Message = $"[Parser] {ex.Message}",
+                Line = Current.Line,
+                Column = Current.Column,
+                Severity = Diagnostic.SeverityLevel.Error
+            });
 
-        public AST_Program Parse() //TODO diagnostics
+            // 错误恢复：跳过当前语句直到行尾或文件末尾
+            while (!Match(TokenType.EOF, TokenType.Linebreak))
+            {
+                Consume();
+            }
+
+            if (Match(TokenType.Linebreak)) Consume();
+            // while (Match(TokenType.Dedent, TokenType.Indent)) Consume();
+
+            Report(new Diagnostic
+            {
+                Message = $"[Parser] Recovered from error. Current token: {Current}",
+                Line = Current.Line,
+                Column = Current.Column,
+                Severity = Diagnostic.SeverityLevel.Log
+            });
+        }
+
+        public AST_Program Parse()
         {
             var program = new AST_Program();
 
@@ -83,23 +111,8 @@ namespace Narratoria.Core
                 }
                 catch (Exception ex)
                 {
-                    // 记录诊断信息
-                    Report(new Diagnostic
-                    {
-                        Message = $"[Parser] {ex.Message}",
-                        Line = Current.Line,
-                        Column = Current.Column,
-                        Severity = Diagnostic.SeverityLevel.Error
-                    });
-
-                    // 错误恢复：跳过当前语句直到行尾或文件末尾
-                    while (!Match(TokenType.EOF, TokenType.Linebreak))
-                    {
-                        Consume();
-                    }
-
-                    if (Match(TokenType.Linebreak)) Consume();
-                    while (Match(TokenType.Dedent, TokenType.Indent)) Consume();
+                    // 此处捕获的异常针对Label定义和顶级语句的解析错误
+                    Recover(ex);
                 }
             }
 
@@ -137,7 +150,15 @@ namespace Narratoria.Core
 
             while (!Match(TokenType.Dedent, TokenType.EOF))
             {
-                block.Statements.Add(ParseStatement());
+                try
+                {
+                    block.Statements.Add(ParseStatement());
+                }
+                catch (Exception ex)
+                {
+                    // 此处捕获的异常针对标签块内语句的解析错误
+                    Recover(ex);
+                }
             }
 
             Expect(TokenType.Dedent, "Expected dedentation after label block.");
@@ -159,7 +180,7 @@ namespace Narratoria.Core
             else if (Match(TokenType.Call)) return ParseCall();
             else if (Match(TokenType.Variable)) return ParseAssign();
             else if (Match(TokenType.If)) return ParseIf();
-            else throw new Exception($"Unexpected token {Current.Type}.");
+            else throw new Exception($"Unexpected token {Current.Type} to start a statement.");
         }
 
         private AST_Dialogue ParseDialogue()
@@ -212,7 +233,15 @@ namespace Narratoria.Core
 
             while (!Match(TokenType.Dedent, TokenType.EOF))
             {
-                item.Body.Add(ParseStatement());
+                try
+                {
+                    item.Body.Add(ParseStatement());
+                }
+                catch (Exception ex)
+                {
+                    // 此处捕获的异常针对菜单项内语句的解析错误
+                    Recover(ex);
+                }
             }
 
             Expect(TokenType.Dedent, "Expected dedentation after menu option.");
@@ -306,7 +335,15 @@ namespace Narratoria.Core
 
             while (!Match(TokenType.Dedent, TokenType.EOF))
             {
-                currentIfNode.ThenBlock.Add(ParseStatement());
+                try
+                {
+                    currentIfNode.ThenBlock.Add(ParseStatement());
+                }
+                catch (Exception ex)
+                {
+                    // 此处捕获的异常针对 if 块内语句的解析错误
+                    Recover(ex);
+                }
             }
             Expect(TokenType.Dedent, "Expected dedentation after if block.");
 
@@ -327,7 +364,15 @@ namespace Narratoria.Core
                 };
                 while (!Match(TokenType.Dedent, TokenType.EOF))
                 {
-                    elifNode.ThenBlock.Add(ParseStatement());
+                    try
+                    {
+                        elifNode.ThenBlock.Add(ParseStatement());
+                    }
+                    catch (Exception ex)
+                    {
+                        // 此处捕获的异常针对 elif 块内语句的解析错误
+                        Recover(ex);
+                    }
                 }
                 Expect(TokenType.Dedent, "Expected dedentation after elif block.");
 
@@ -345,7 +390,15 @@ namespace Narratoria.Core
                 currentIfNode.ElseBlock = [];
                 while (!Match(TokenType.Dedent, TokenType.EOF))
                 {
-                    currentIfNode.ElseBlock.Add(ParseStatement());
+                    try
+                    {
+                        currentIfNode.ElseBlock.Add(ParseStatement());
+                    }
+                    catch (Exception ex)
+                    {
+                        // 此处捕获的异常针对 else 块内语句的解析错误
+                        Recover(ex);
+                    }
                 }
                 Expect(TokenType.Dedent, "Expected dedentation after else block.");
             }
@@ -537,7 +590,7 @@ namespace Narratoria.Core
                     Column = expr.Column
                 };
             }
-            throw new Exception($"Unexpected token {Current.Type}.");
+            throw new Exception($"Unexpected token {Current.Type}, expected primary expression.");
         }
 
         private AST_Literal ParseLiteral()

@@ -40,12 +40,27 @@ namespace Narratoria.Core
         public virtual void AddDiagnostic(Diagnostic diagnostic)
         {
             _bag.Add(diagnostic);
-            Counts[diagnostic.Severity]++;
+            if (Counts.TryGetValue(diagnostic.Severity, out int value))
+            {
+                Counts[diagnostic.Severity] = ++value;
+            }
+            else
+            {
+                Counts.Add(diagnostic.Severity, 1);
+            }
         }
 
         public List<Diagnostic> GetAll()
         {
-            return [.. _bag];
+            var list = new List<Diagnostic>();
+            while (!_bag.IsEmpty)
+            {
+                if (_bag.TryTake(out Diagnostic? diag))
+                {
+                    list.Add(diag);
+                }
+            }
+            return [.. list.Reverse<Diagnostic>()];
         }
 
         public void Clear()
@@ -71,6 +86,11 @@ namespace Narratoria.Core
             Warning = 2,
             Info = 3,
             Log = 4
+        }
+
+        public override string ToString()
+        {
+            return $"[{Severity}]".PadRight(8) + $"{Message} [Ln {Line}, Col {Column}]";
         }
     }
 

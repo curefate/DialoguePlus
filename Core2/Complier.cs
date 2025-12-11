@@ -11,7 +11,7 @@ namespace Narratoria.Core
             _tableManager = tableManager ?? new SymbolTableManager();
         }
 
-        private SIRSet _Compile(string filePath, HashSet<string> importedFiles, bool isRoot = false)
+        private SIRSet _Compile(string filePath, HashSet<string> importedFiles, bool isRoot)
         {
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             {
