@@ -34,19 +34,19 @@ namespace Narratoria.Core
 
     public class DiagnosticListener
     {
-        private readonly ConcurrentBag<Diagnostic> _bag = [];
-        public readonly Dictionary<Diagnostic.SeverityLevel, int> Counts = [];
+        private readonly ConcurrentQueue<Diagnostic> _bag = [];
+        public readonly ConcurrentDictionary<Diagnostic.SeverityLevel, int> Counts = [];
 
         public virtual void AddDiagnostic(Diagnostic diagnostic)
         {
-            _bag.Add(diagnostic);
+            _bag.Enqueue(diagnostic);
             if (Counts.TryGetValue(diagnostic.Severity, out int value))
             {
                 Counts[diagnostic.Severity] = ++value;
             }
             else
             {
-                Counts.Add(diagnostic.Severity, 1);
+                Counts.AddOrUpdate(diagnostic.Severity, 1, (key, oldValue) => oldValue + 1);
             }
         }
 
@@ -55,19 +55,19 @@ namespace Narratoria.Core
             var list = new List<Diagnostic>();
             while (!_bag.IsEmpty)
             {
-                if (_bag.TryTake(out Diagnostic? diag))
+                if (_bag.TryDequeue(out Diagnostic? diag))
                 {
                     list.Add(diag);
                 }
             }
-            return [.. list.Reverse<Diagnostic>()];
+            return list;
         }
 
         public void Clear()
         {
             while (!_bag.IsEmpty)
             {
-                _bag.TryTake(out _);
+                _bag.TryDequeue(out _);
             }
         }
     }
@@ -90,7 +90,7 @@ namespace Narratoria.Core
 
         public override string ToString()
         {
-            return $"[{Severity}]".PadRight(8) + $"{Message} [Ln {Line}, Col {Column}]";
+            return $"[{Severity}]".PadRight(10) + $"{Message} [Ln {Line}, Col {Column}]";
         }
     }
 
@@ -114,15 +114,31 @@ namespace Narratoria.Core
     public class FileSymbolTable
     {
         public required string FilePath { get; init; }
-
-        public Dictionary<string, SymbolPosition> LabelDefs { get; } = [];
-
-        public Dictionary<string, SymbolPosition> VariableDefs { get; } = [];
-
+        public Dictionary<string, List<SymbolPosition>> LabelDefs { get; } = [];
+        public Dictionary<string, List<SymbolPosition>> VariableDefs { get; } = [];
         public Dictionary<string, List<SymbolPosition>> LabelUsages { get; } = [];
-
         public Dictionary<string, List<SymbolPosition>> VariableUsages { get; } = [];
         public HashSet<string> References { get; } = [];
+
+        public void AddLabelDef(string labelName, SymbolPosition position)
+        {
+            if (!LabelDefs.TryGetValue(labelName, out List<SymbolPosition>? value))
+            {
+                value = [];
+                LabelDefs[labelName] = value;
+            }
+            value.Add(position);
+        }
+
+        public void AddVariableDef(string variableName, SymbolPosition position)
+        {
+            if (!VariableDefs.TryGetValue(variableName, out List<SymbolPosition>? value))
+            {
+                value = [];
+                VariableDefs[variableName] = value;
+            }
+            value.Add(position);
+        }
 
         public void AddLabelUsage(string labelName, SymbolPosition position)
         {
@@ -167,7 +183,8 @@ namespace Narratoria.Core
 
         public FileSymbolTable GetFileSymbolTable(string filePath)
         {
-            return _fileTables[filePath];
+            _fileTables.TryGetValue(filePath, out var table);
+            return table!;
         }
 
         public override string ToString()
@@ -179,7 +196,7 @@ namespace Narratoria.Core
                 sb.AppendLine("  Label Defs:");
                 foreach (var label in table.LabelDefs)
                 {
-                    sb.AppendLine($"    {label.Key} at Line {label.Value.Line}, Column {label.Value.Column}");
+                    sb.AppendLine($"    {label.Key} at Lines: {string.Join(", ", label.Value.Select(v => v.Line.ToString()))}");
                 }
                 sb.AppendLine("  Label Usages:");
                 foreach (var label in table.LabelUsages)
@@ -189,7 +206,7 @@ namespace Narratoria.Core
                 sb.AppendLine("  Variable Defs:");
                 foreach (var variable in table.VariableDefs)
                 {
-                    sb.AppendLine($"    {variable.Key} at Line {variable.Value.Line}, Column {variable.Value.Column}");
+                    sb.AppendLine($"    {variable.Key} at Lines: {string.Join(", ", variable.Value.Select(v => v.Line.ToString()))}");
                 }
                 sb.AppendLine("  Variable Usages:");
                 foreach (var variable in table.VariableUsages)

@@ -2,10 +2,10 @@ namespace Narratoria.Core
 {
     public class SIRSet
     {
+        public static readonly string DefaultEntranceLabel = "@system/__main__";
         public Dictionary<string, SIR_Label> Labels { get; } = [];
-        public long Timestamp { get; init; }
         public string SourceFile { get; init; } = string.Empty;
-        public string EntranceLabel { get; init; } = "__main__";
+        public string EntranceLabel { get; init; } = DefaultEntranceLabel;
     }
 
     public abstract class SIR

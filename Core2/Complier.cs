@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Narratoria.Core
 {
     public class Compiler : BaseDiagnosticReporter
@@ -36,7 +38,6 @@ namespace Narratoria.Core
 
             var sirSet = new SIRSet
             {
-                Timestamp = DateTimeOffset.Now.ToUnixTimeSeconds(),
                 SourceFile = filePath,
             };
             var table = new FileSymbolTable
@@ -120,23 +121,6 @@ namespace Narratoria.Core
                 var imported = _Compile(importPath, importedFiles, false);
                 foreach (var label in imported.Labels)
                 {
-                    if (sirSet.Labels.ContainsKey(label.Key) && isRoot)
-                    {
-                        Report(new Diagnostic
-                        {
-                            Message = $"[Compiler] Duplicate label definition \"{label.Key}\" found in file: {importPath} and {filePath}. Overriding previous definition.",
-                            Line = import.Path.Line,
-                            Column = import.Path.Column,
-                            Span = new TextSpan
-                            {
-                                StartLine = import.Path.Line,
-                                StartColumn = import.Path.Column,
-                                EndLine = import.Path.Line,
-                                EndColumn = import.Path.Column + import.Path.Lexeme.Length,
-                            },
-                            Severity = Diagnostic.SeverityLevel.Warning,
-                        });
-                    }
                     sirSet.Labels[label.Key] = label.Value;
                 }
             }
@@ -146,7 +130,7 @@ namespace Narratoria.Core
             {
                 SIR_Label topLevelLabel = new()
                 {
-                    LabelName = "__main__",
+                    LabelName = SIRSet.DefaultEntranceLabel,
                     Source = filePath,
                     Line = -1,
                     Column = -1,
@@ -157,35 +141,18 @@ namespace Narratoria.Core
                     topLevelLabel.Statements.Add(sir);
                 }
                 sirSet.Labels[topLevelLabel.LabelName] = topLevelLabel;
-                table.LabelDefs[topLevelLabel.LabelName] = new SymbolPosition
+                table.AddLabelDef(topLevelLabel.LabelName, new SymbolPosition
                 {
                     FilePath = filePath,
                     Line = -1,
                     Column = -1,
-                };
+                });
             }
 
             // Handle labels
             foreach (var label in ast.Labels)
             {
                 var labelBlock = (SIR_Label)builder.VisitLabelBlock(label);
-                if (sirSet.Labels.ContainsKey(labelBlock.LabelName) && isRoot)
-                {
-                    Report(new Diagnostic
-                    {
-                        Message = $"[Compiler] Duplicate label definition \"{labelBlock.LabelName}\" found in file: {filePath} and {sirSet.Labels[labelBlock.LabelName].Source}. Overriding previous definition.",
-                        Line = label.LabelName.Line,
-                        Column = label.LabelName.Column,
-                        Span = new TextSpan
-                        {
-                            StartLine = label.LabelName.Line,
-                            StartColumn = label.LabelName.Column,
-                            EndLine = label.LabelName.Line,
-                            EndColumn = label.LabelName.Column + label.LabelName.Lexeme.Length,
-                        },
-                        Severity = Diagnostic.SeverityLevel.Warning,
-                    });
-                }
                 sirSet.Labels[labelBlock.LabelName] = labelBlock;
 
                 if (labelBlock.Statements.Count == 0 && isRoot)
@@ -213,6 +180,17 @@ namespace Narratoria.Core
 
         public CompileResult Compile(string filePath)
         {
+            // Standardize file path
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
+            {
+                throw new FileNotFoundException($"File not found: {filePath}");
+            }
+            filePath = Path.GetFullPath(filePath);
+            if (!string.Equals(Path.GetExtension(filePath), _extension, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException($"File must have '{_extension}' extension: {filePath}");
+            }
+
             // Temporary Diagnostic Listener
             DiagnosticListener tempListener = new();
             AttachDiagnosticListener(tempListener);
@@ -241,7 +219,7 @@ namespace Narratoria.Core
                 all_tables.Add(ref_table);
             }
 
-            // Check if label definitions exist or duplicate
+            // Check if label definitions exist and are unique
             foreach (var usage in table.LabelUsages)
             {
                 var labelName = usage.Key;
@@ -252,7 +230,7 @@ namespace Narratoria.Core
                 {
                     if (ref_table.LabelDefs.ContainsKey(labelName))
                     {
-                        defPositions.Add(ref_table.LabelDefs[labelName]);
+                        defPositions.AddRange(ref_table.LabelDefs[labelName]);
                     }
                 }
                 // Report undefined label usages
@@ -273,6 +251,26 @@ namespace Narratoria.Core
                 else if (defPositions.Count > 1)
                 {
                     foreach (var pos in defPositions)
+                    {
+                        Report(new Diagnostic
+                        {
+                            Message = $"[Compiler] Duplicate definition of label \"{labelName}\" found in file: {pos.FilePath}.",
+                            Line = pos.Line,
+                            Column = pos.Column,
+                            Severity = Diagnostic.SeverityLevel.Error,
+                        });
+                    }
+                }
+            }
+            // Check for duplicate label definitions within the current file which don't depend on usages
+            foreach (var def in table.LabelDefs)
+            {
+                if (table.LabelUsages.ContainsKey(def.Key)) continue; // Already checked above
+                var labelName = def.Key;
+                var positions = def.Value;
+                if (positions.Count > 1)
+                {
+                    foreach (var pos in positions)
                     {
                         Report(new Diagnostic
                         {
@@ -344,18 +342,18 @@ namespace Narratoria.Core
         public IRBuilder(FileSymbolTable table)
         {
             _table = table ?? throw new ArgumentNullException(nameof(table));
-            _exprBuilder = new ExprBuilder("__main__", _table);
+            _exprBuilder = new ExprBuilder(SIRSet.DefaultEntranceLabel, _table);
         }
 
         public override SIR VisitLabelBlock(AST_LabelBlock context)
         {
             _exprBuilder.SetCurrentLabel(context.LabelName.Lexeme);
-            _table.LabelDefs[context.LabelName.Lexeme] = new SymbolPosition
+            _table.AddLabelDef(context.LabelName.Lexeme, new SymbolPosition
             {
                 FilePath = _table.FilePath,
                 Line = context.LabelName.Line,
                 Column = context.LabelName.Column,
-            };
+            });
             SIR_Label label = new()
             {
                 LabelName = context.LabelName.Lexeme,
@@ -451,15 +449,12 @@ namespace Narratoria.Core
                 Line = context.Value.Line,
                 Column = context.Value.Column,
             });
-            if (!_table.VariableDefs.ContainsKey(varName))
+            _table.AddVariableDef(varName, new SymbolPosition
             {
-                _table.VariableDefs[varName] = new SymbolPosition
-                {
-                    FilePath = _table.FilePath,
-                    Line = context.Variable.Line,
-                    Column = context.Variable.Column,
-                };
-            }
+                FilePath = _table.FilePath,
+                Line = context.Variable.Line,
+                Column = context.Variable.Column,
+            });
             var variable = Expression.Variable(varName);
             var value = _exprBuilder.Visit(context.Value);
             return context.Operator.Type switch
@@ -664,7 +659,7 @@ namespace Narratoria.Core
             switch (context.Value.Type)
             {
                 case TokenType.Number:
-                    return Expression.Constant(float.Parse(context.Value.Lexeme));
+                    return Expression.Constant(float.Parse(context.Value.Lexeme, CultureInfo.InvariantCulture));
                 case TokenType.Boolean:
                     return Expression.Constant(bool.Parse(context.Value.Lexeme));
                 case TokenType.Variable:

@@ -29,17 +29,23 @@ public class Program
 
         var executer = new Executer();
         var tableManager = new SymbolTableManager();
-        var listener = new DiagnosticListener();
         var compiler = new Compiler(tableManager);
-        compiler.AttachDiagnosticListener(listener);
         var result = compiler.Compile("../../../TestScripts/text.narr");
 
         Console.ForegroundColor = ConsoleColor.Red;
-        foreach (var diag in listener.GetAll())
+        foreach (var diag in result.Diagnostics)
         {
             Console.WriteLine(diag);
         }
         Console.ResetColor();
-        executer.Execute(result.SirSet);
+
+        if (result.Success)
+        {
+            executer.Execute(result.SirSet);
+        }
+        else
+        {
+            Console.WriteLine("Compilation failed due to errors.");
+        }
     }
 }
