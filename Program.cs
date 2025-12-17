@@ -32,7 +32,7 @@ public class Program
         var listener = new DiagnosticListener();
         var compiler = new Compiler(tableManager);
         compiler.AttachDiagnosticListener(listener);
-        var sirset = compiler.Compile("../../../TestScripts/text.narr");
+        var result = compiler.Compile("../../../TestScripts/text.narr");
 
         Console.ForegroundColor = ConsoleColor.Red;
         foreach (var diag in listener.GetAll())
@@ -40,6 +40,6 @@ public class Program
             Console.WriteLine(diag);
         }
         Console.ResetColor();
-        executer.Execute(sirset);
+        executer.Execute(result.SirSet);
     }
 }

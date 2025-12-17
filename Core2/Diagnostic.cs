@@ -122,6 +122,7 @@ namespace Narratoria.Core
         public Dictionary<string, List<SymbolPosition>> LabelUsages { get; } = [];
 
         public Dictionary<string, List<SymbolPosition>> VariableUsages { get; } = [];
+        public HashSet<string> References { get; } = [];
 
         public void AddLabelUsage(string labelName, SymbolPosition position)
         {
@@ -164,31 +165,9 @@ namespace Narratoria.Core
             return _fileTables.ContainsKey(filePath);
         }
 
-        public SymbolPosition? FindDefinition(string symbolName)
+        public FileSymbolTable GetFileSymbolTable(string filePath)
         {
-            foreach (var table in _fileTables.Values)
-            {
-                if (table.LabelDefs.TryGetValue(symbolName, out var labelDef)) return labelDef;
-                if (table.VariableDefs.TryGetValue(symbolName, out var varDef)) return varDef;
-            }
-            return null;
-        }
-
-        public List<(string FilePath, int Line, int Column)> FindReferences(string symbolName)
-        {
-            var results = new List<(string FilePath, int Line, int Column)>();
-            foreach (var table in _fileTables.Values)
-            {
-                if (table.LabelUsages.TryGetValue(symbolName, out var labelRefs))
-                {
-                    results.AddRange(labelRefs.Select(pos => (table.FilePath, pos.Line, pos.Column)));
-                }
-                if (table.VariableUsages.TryGetValue(symbolName, out var varRefs))
-                {
-                    results.AddRange(varRefs.Select(pos => (table.FilePath, pos.Line, pos.Column)));
-                }
-            }
-            return results;
+            return _fileTables[filePath];
         }
 
         public override string ToString()

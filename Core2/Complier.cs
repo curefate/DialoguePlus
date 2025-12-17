@@ -43,110 +43,99 @@ namespace Narratoria.Core
             {
                 FilePath = filePath,
             };
+            // builder不需要报告诊断，由于lexer和parser的错误报告/恢复机制，builder的throw不应该被触发，否则是bug
             IRBuilder builder = new(table);
-            foreach (var listener in _listeners)
-            {
-                builder.AttachDiagnosticListener(listener);
-            }
 
             // Handle imports
             foreach (var import in ast.Imports)
             {
-                var path = import.Path.Lexeme;
-                path = Path.IsPathFullyQualified(path) ? path : Path.GetFullPath(Path.Combine(Path.GetDirectoryName(filePath) ?? string.Empty, path));
-                if (string.IsNullOrEmpty(path))
+                var importPath = import.Path.Lexeme;
+                importPath = Path.IsPathFullyQualified(importPath) ? importPath : Path.GetFullPath(Path.Combine(Path.GetDirectoryName(filePath) ?? string.Empty, importPath));
+                if (string.IsNullOrEmpty(importPath))
                 {
-                    Report(new Diagnostic
-                    {
-                        Message = "[Compiler] Import path cannot be empty.",
-                        Line = import.Path.Line,
-                        Column = import.Path.Column,
-                        Span = new TextSpan
-                        {
-                            StartLine = import.Path.Line,
-                            StartColumn = import.Path.Column,
-                            EndLine = import.Path.Line,
-                            EndColumn = import.Path.Column + import.Path.Lexeme.Length,
-                        },
-                        Severity = Diagnostic.SeverityLevel.Error,
-                    });
-                    continue;
-                }
-                if (!File.Exists(path))
-                {
-                    Report(new Diagnostic
-                    {
-                        Message = $"[Compiler] Imported file not found: {path}",
-                        Line = import.Path.Line,
-                        Column = import.Path.Column,
-                        Span = new TextSpan
-                        {
-                            StartLine = import.Path.Line,
-                            StartColumn = import.Path.Column,
-                            EndLine = import.Path.Line,
-                            EndColumn = import.Path.Column + import.Path.Lexeme.Length,
-                        },
-                        Severity = Diagnostic.SeverityLevel.Error,
-                    });
-                    continue;
-                }
-                if (!string.Equals(Path.GetExtension(path), _extension, StringComparison.OrdinalIgnoreCase))
-                {
-                    Report(new Diagnostic
-                    {
-                        Message = $"[Compiler] Imported file must have '{_extension}' extension: {path}",
-                        Line = import.Path.Line,
-                        Column = import.Path.Column,
-                        Span = new TextSpan
-                        {
-                            StartLine = import.Path.Line,
-                            StartColumn = import.Path.Column,
-                            EndLine = import.Path.Line,
-                            EndColumn = import.Path.Column + import.Path.Lexeme.Length,
-                        },
-                        Severity = Diagnostic.SeverityLevel.Error,
-                    });
-                    continue;
-                }
-                if (importedFiles.Contains(path))
-                {
-                    Report(new Diagnostic
-                    {
-                        Message = $"[Compiler] Circular import detected: {path}",
-                        Line = import.Path.Line,
-                        Column = import.Path.Column,
-                        Span = new TextSpan
-                        {
-                            StartLine = import.Path.Line,
-                            StartColumn = import.Path.Column,
-                            EndLine = import.Path.Line,
-                            EndColumn = import.Path.Column + import.Path.Lexeme.Length,
-                        },
-                        Severity = Diagnostic.SeverityLevel.Warning,
-                    });
-                    continue;
-                }
-                var imported = _Compile(path, importedFiles, false);
-                foreach (var label in imported.Labels)
-                {
-                    if (sirSet.Labels.ContainsKey(label.Key))
+                    if (isRoot)
                     {
                         Report(new Diagnostic
                         {
-                            Message = $"[Compiler] Duplicate label definition \"{label.Key}\" in file: {filePath}",
-                            Line = label.Value.Line,
-                            Column = label.Value.Column,
+                            Message = "[Compiler] Import path cannot be empty.",
+                            Line = import.Path.Line,
+                            Column = import.Path.Column,
                             Span = new TextSpan
                             {
-                                StartLine = label.Value.Line,
-                                StartColumn = label.Value.Column,
-                                EndLine = label.Value.Line,
-                                EndColumn = label.Value.Column + label.Key.Length,
+                                StartLine = import.Path.Line,
+                                StartColumn = import.Path.Column,
+                                EndLine = import.Path.Line,
+                                EndColumn = import.Path.Column + import.Path.Lexeme.Length,
                             },
                             Severity = Diagnostic.SeverityLevel.Error,
                         });
-                        continue;
-                        // throw new Exception($"Duplicate label definition \"{label.Key}\" in file: {filePath}");
+                    }
+                    continue;
+                }
+                if (!File.Exists(importPath))
+                {
+                    if (isRoot)
+                    {
+                        Report(new Diagnostic
+                        {
+                            Message = $"[Compiler] Imported file not found: {importPath}.",
+                            Line = import.Path.Line,
+                            Column = import.Path.Column,
+                            Span = new TextSpan
+                            {
+                                StartLine = import.Path.Line,
+                                StartColumn = import.Path.Column,
+                                EndLine = import.Path.Line,
+                                EndColumn = import.Path.Column + import.Path.Lexeme.Length,
+                            },
+                            Severity = Diagnostic.SeverityLevel.Error,
+                        });
+                    }
+                    continue;
+                }
+                if (!string.Equals(Path.GetExtension(importPath), _extension, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (isRoot)
+                    {
+                        Report(new Diagnostic
+                        {
+                            Message = $"[Compiler] Imported file must have '{_extension}' extension: {importPath}.",
+                            Line = import.Path.Line,
+                            Column = import.Path.Column,
+                            Span = new TextSpan
+                            {
+                                StartLine = import.Path.Line,
+                                StartColumn = import.Path.Column,
+                                EndLine = import.Path.Line,
+                                EndColumn = import.Path.Column + import.Path.Lexeme.Length,
+                            },
+                            Severity = Diagnostic.SeverityLevel.Error,
+                        });
+                    }
+                    continue;
+                }
+                table.References.Add(importPath);
+                if (importedFiles.Contains(importPath)) continue; // Prevent circular imports
+
+                var imported = _Compile(importPath, importedFiles, false);
+                foreach (var label in imported.Labels)
+                {
+                    if (sirSet.Labels.ContainsKey(label.Key) && isRoot)
+                    {
+                        Report(new Diagnostic
+                        {
+                            Message = $"[Compiler] Duplicate label definition \"{label.Key}\" found in file: {importPath} and {filePath}. Overriding previous definition.",
+                            Line = import.Path.Line,
+                            Column = import.Path.Column,
+                            Span = new TextSpan
+                            {
+                                StartLine = import.Path.Line,
+                                StartColumn = import.Path.Column,
+                                EndLine = import.Path.Line,
+                                EndColumn = import.Path.Column + import.Path.Lexeme.Length,
+                            },
+                            Severity = Diagnostic.SeverityLevel.Warning,
+                        });
                     }
                     sirSet.Labels[label.Key] = label.Value;
                 }
@@ -180,17 +169,168 @@ namespace Narratoria.Core
             foreach (var label in ast.Labels)
             {
                 var labelBlock = (SIR_Label)builder.VisitLabelBlock(label);
+                if (sirSet.Labels.ContainsKey(labelBlock.LabelName) && isRoot)
+                {
+                    Report(new Diagnostic
+                    {
+                        Message = $"[Compiler] Duplicate label definition \"{labelBlock.LabelName}\" found in file: {filePath} and {sirSet.Labels[labelBlock.LabelName].Source}. Overriding previous definition.",
+                        Line = label.LabelName.Line,
+                        Column = label.LabelName.Column,
+                        Span = new TextSpan
+                        {
+                            StartLine = label.LabelName.Line,
+                            StartColumn = label.LabelName.Column,
+                            EndLine = label.LabelName.Line,
+                            EndColumn = label.LabelName.Column + label.LabelName.Lexeme.Length,
+                        },
+                        Severity = Diagnostic.SeverityLevel.Warning,
+                    });
+                }
                 sirSet.Labels[labelBlock.LabelName] = labelBlock;
+
+                if (labelBlock.Statements.Count == 0 && isRoot)
+                {
+                    Report(new Diagnostic
+                    {
+                        Message = $"[Compiler] Label \"{labelBlock.LabelName}\" has no statements in file: {filePath}",
+                        Line = label.LabelName.Line,
+                        Column = label.LabelName.Column,
+                        Span = new TextSpan
+                        {
+                            StartLine = label.LabelName.Line,
+                            StartColumn = label.LabelName.Column,
+                            EndLine = label.LabelName.Line,
+                            EndColumn = label.LabelName.Column + label.LabelName.Lexeme.Length,
+                        },
+                        Severity = Diagnostic.SeverityLevel.Warning,
+                    });
+                }
             }
 
             _tableManager.UpdateFileSymbols(table);
             return sirSet;
         }
 
-        public SIRSet Compile(string filePath)
+        public CompileResult Compile(string filePath)
         {
-            return _Compile(filePath, [], true);
+            // Temporary Diagnostic Listener
+            DiagnosticListener tempListener = new();
+            AttachDiagnosticListener(tempListener);
+
+            // Compilation
+            var sirSet = _Compile(filePath, [], true);
+
+            // ===================== Symbol Table Checking =====================
+            // Get current symbol table and all referenced tables
+            var table = _tableManager.GetFileSymbolTable(filePath);
+            List<FileSymbolTable> all_tables = [table];
+            foreach (var reference in table.References)
+            {
+                var ref_table = _tableManager.GetFileSymbolTable(reference);
+                if (ref_table == null)
+                {
+                    Report(new Diagnostic
+                    {
+                        Message = $"[Compiler] Missing symbol table for referenced file: {reference}.",
+                        Line = -1,
+                        Column = -1,
+                        Severity = Diagnostic.SeverityLevel.Error,
+                    });
+                    continue;
+                }
+                all_tables.Add(ref_table);
+            }
+
+            // Check if label definitions exist or duplicate
+            foreach (var usage in table.LabelUsages)
+            {
+                var labelName = usage.Key;
+                var positions = usage.Value;
+                // Find definitions in current table and referenced tables
+                List<SymbolPosition> defPositions = [];
+                foreach (var ref_table in all_tables)
+                {
+                    if (ref_table.LabelDefs.ContainsKey(labelName))
+                    {
+                        defPositions.Add(ref_table.LabelDefs[labelName]);
+                    }
+                }
+                // Report undefined label usages
+                if (defPositions.Count == 0)
+                {
+                    foreach (var pos in positions)
+                    {
+                        Report(new Diagnostic
+                        {
+                            Message = $"[Compiler] Undefined label \"{labelName}\" used in file: {pos.FilePath}.",
+                            Line = pos.Line,
+                            Column = pos.Column,
+                            Severity = Diagnostic.SeverityLevel.Error,
+                        });
+                    }
+                }
+                // Report duplicate label definitions
+                else if (defPositions.Count > 1)
+                {
+                    foreach (var pos in defPositions)
+                    {
+                        Report(new Diagnostic
+                        {
+                            Message = $"[Compiler] Duplicate definition of label \"{labelName}\" found in file: {pos.FilePath}.",
+                            Line = pos.Line,
+                            Column = pos.Column,
+                            Severity = Diagnostic.SeverityLevel.Error,
+                        });
+                    }
+                }
+            }
+
+            // Check if variable definitions exist
+            foreach (var usage in table.VariableUsages)
+            {
+                var variableName = usage.Key;
+                var positions = usage.Value;
+                // Find definitions in all tables
+                bool defined = false;
+                foreach (var ref_table in all_tables)
+                {
+                    if (ref_table.VariableDefs.ContainsKey(variableName))
+                    {
+                        defined = true;
+                        break;
+                    }
+                }
+                if (!defined)
+                {
+                    foreach (var pos in positions)
+                    {
+                        Report(new Diagnostic
+                        {
+                            Message = $"[Compiler] Undefined variable \"{variableName}\" used in file: {pos.FilePath}.",
+                            Line = pos.Line,
+                            Column = pos.Column,
+                            Severity = Diagnostic.SeverityLevel.Error,
+                        });
+                    }
+                }
+            }
+            // ===================== Symbol Table Checking End =====================
+
+            DetachDiagnosticListener(tempListener);
+            return new CompileResult
+            {
+                Success = tempListener.Counts.TryGetValue(Diagnostic.SeverityLevel.Error, out int errorCount) ? errorCount == 0 : true,
+                Diagnostics = tempListener.GetAll(),
+                SirSet = sirSet,
+            };
         }
+    }
+
+    public readonly struct CompileResult
+    {
+        public required bool Success { get; init; }
+        public required List<Diagnostic> Diagnostics { get; init; }
+        public required SIRSet SirSet { get; init; }
     }
 
     /// <summary>
@@ -205,12 +345,6 @@ namespace Narratoria.Core
         {
             _table = table ?? throw new ArgumentNullException(nameof(table));
             _exprBuilder = new ExprBuilder("__main__", _table);
-        }
-
-        public override void AttachDiagnosticListener(DiagnosticListener listener)
-        {
-            base.AttachDiagnosticListener(listener);
-            _exprBuilder.AttachDiagnosticListener(listener);
         }
 
         public override SIR VisitLabelBlock(AST_LabelBlock context)

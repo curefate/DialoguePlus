@@ -230,7 +230,7 @@ namespace Narratoria.Core
         T VisitEmbedExpr(AST_EmbedExpr context);
     }
 
-    public abstract class BaseVisitor<T> : BaseDiagnosticReporter, IASTVisitor<T>
+    public abstract class BaseVisitor<T> : IASTVisitor<T>
     {
         public T Visit(ASTNode context)
         {
