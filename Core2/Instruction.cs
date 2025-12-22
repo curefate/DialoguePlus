@@ -4,7 +4,6 @@ namespace Narratoria.Core
     {
         public static readonly string DefaultEntranceLabel = "@system/__main__";
         public Dictionary<string, SIR_Label> Labels { get; } = [];
-        public string SourceFile { get; init; } = string.Empty;
         public string EntranceLabel { get; init; } = DefaultEntranceLabel;
     }
 

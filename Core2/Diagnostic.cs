@@ -105,7 +105,7 @@ namespace Narratoria.Core
     // Symbol Table
     public class SymbolPosition
     {
-        public required string FilePath { get; init; }
+        public required string Uri { get; init; }
         public required int Line { get; init; }
         public required int Column { get; init; }
     }
@@ -113,12 +113,12 @@ namespace Narratoria.Core
 
     public class FileSymbolTable
     {
-        public required string FilePath { get; init; }
+        public required string Uri { get; init; }
         public Dictionary<string, List<SymbolPosition>> LabelDefs { get; } = [];
         public Dictionary<string, List<SymbolPosition>> VariableDefs { get; } = [];
         public Dictionary<string, List<SymbolPosition>> LabelUsages { get; } = [];
         public Dictionary<string, List<SymbolPosition>> VariableUsages { get; } = [];
-        public HashSet<string> References { get; } = [];
+        public Dictionary<string, List<SymbolPosition>> References { get; } = [];
 
         public void AddLabelDef(string labelName, SymbolPosition position)
         {
@@ -159,6 +159,16 @@ namespace Narratoria.Core
             }
             value.Add(position);
         }
+
+        public void AddReference(string referenceName, SymbolPosition position)
+        {
+            if (!References.TryGetValue(referenceName, out List<SymbolPosition>? value))
+            {
+                value = [];
+                References[referenceName] = value;
+            }
+            value.Add(position);
+        }
     }
 
 
@@ -168,22 +178,22 @@ namespace Narratoria.Core
 
         public void UpdateFileSymbols(FileSymbolTable table)
         {
-            _fileTables[table.FilePath] = table;
+            _fileTables[table.Uri] = table;
         }
 
-        public void RemoveFileSymbols(string filePath)
+        public void RemoveFileSymbols(string uri)
         {
-            _fileTables.Remove(filePath);
+            _fileTables.Remove(uri);
         }
 
-        public bool ContainsFile(string filePath)
+        public bool ContainsFile(string uri)
         {
-            return _fileTables.ContainsKey(filePath);
+            return _fileTables.ContainsKey(uri);
         }
 
-        public FileSymbolTable GetFileSymbolTable(string filePath)
+        public FileSymbolTable GetFileSymbolTable(string uri)
         {
-            _fileTables.TryGetValue(filePath, out var table);
+            _fileTables.TryGetValue(uri, out var table);
             return table!;
         }
 
@@ -192,7 +202,7 @@ namespace Narratoria.Core
             System.Text.StringBuilder sb = new();
             foreach (var table in _fileTables.Values)
             {
-                sb.AppendLine($"File: {table.FilePath}");
+                sb.AppendLine($"File: {table.Uri}");
                 sb.AppendLine("  Label Defs:");
                 foreach (var label in table.LabelDefs)
                 {

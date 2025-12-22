@@ -4,22 +4,18 @@ namespace Narratoria.Core
     {
         private readonly List<Token> _tokens;
         private int _position = 0;
-        public string SourceFile { get; init; } = string.Empty;
 
-        public Parser(IEnumerable<Token> tokens, string filePath)
+        public Parser(IEnumerable<Token> tokens)
         {
             _tokens = [.. tokens];
-            SourceFile = filePath;
         }
-        public Parser(List<Token> tokens, string filePath)
+        public Parser(List<Token> tokens)
         {
             _tokens = tokens;
-            SourceFile = filePath;
         }
         public Parser(Lexer lexer)
         {
             _tokens = [.. lexer.Tokenize()];
-            SourceFile = lexer.SourceFile;
         }
 
         private Token Current => _position < _tokens.Count ? _tokens[_position] : _tokens[^1];

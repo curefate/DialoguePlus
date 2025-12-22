@@ -5,44 +5,50 @@ namespace Narratoria.Core
     public class Compiler : BaseDiagnosticReporter
     {
         private readonly string _extension = ".narr";
+        private readonly IContentResolver _resolver;
         private readonly SymbolTableManager _tableManager;
         public SymbolTableManager TableManager => _tableManager;
 
-        public Compiler(SymbolTableManager? tableManager = null)
+        public Compiler(IContentResolver? resolver = null, SymbolTableManager? tableManager = null)
         {
+            _resolver = resolver ?? new ContentResolver().Register(new FileContentProvider()).Register(new HttpContentProvider()).Register(new MemoryContentProvider());
             _tableManager = tableManager ?? new SymbolTableManager();
+        }
+
+        private static string PathToUri(string path)
+        {
+            return new Uri(Path.GetFullPath(path)).AbsoluteUri;
         }
 
         private SIRSet _Compile(string filePath, HashSet<string> importedFiles, bool isRoot)
         {
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-            {
-                throw new FileNotFoundException($"File not found: {filePath}");
-            }
+            var fileUri = PathToUri(filePath);
 
-            filePath = Path.GetFullPath(filePath);
-            importedFiles.Add(filePath);
+            importedFiles.Add(fileUri);
             // Lexing and Parsing
             var lexer = new Lexer(filePath);
-            foreach (var listener in _listeners)
+            if (isRoot)
             {
-                lexer.AttachDiagnosticListener(listener);
+                foreach (var listener in _listeners)
+                {
+                    lexer.AttachDiagnosticListener(listener);
+                }
             }
             var tokens = new List<Token>(lexer.Tokenize());
-            var parser = new Parser(tokens, filePath);
-            foreach (var listener in _listeners)
+            var parser = new Parser(tokens);
+            if (isRoot)
             {
-                parser.AttachDiagnosticListener(listener);
+                foreach (var listener in _listeners)
+                {
+                    parser.AttachDiagnosticListener(listener);
+                }
             }
             var ast = parser.Parse();
 
-            var sirSet = new SIRSet
-            {
-                SourceFile = filePath,
-            };
+            var sirSet = new SIRSet();
             var table = new FileSymbolTable
             {
-                FilePath = filePath,
+                Uri = fileUri,
             };
             // builder不需要报告诊断，由于lexer和parser的错误报告/恢复机制，builder的throw不应该被触发，否则是bug
             IRBuilder builder = new(table);
@@ -115,7 +121,12 @@ namespace Narratoria.Core
                     }
                     continue;
                 }
-                table.References.Add(importPath);
+                table.AddReference(importPath, new SymbolPosition
+                {
+                    Uri = fileUri,
+                    Line = import.Path.Line,
+                    Column = import.Path.Column,
+                });
                 if (importedFiles.Contains(importPath)) continue; // Prevent circular imports
 
                 var imported = _Compile(importPath, importedFiles, false);
@@ -143,7 +154,7 @@ namespace Narratoria.Core
                 sirSet.Labels[topLevelLabel.LabelName] = topLevelLabel;
                 table.AddLabelDef(topLevelLabel.LabelName, new SymbolPosition
                 {
-                    FilePath = filePath,
+                    Uri = fileUri,
                     Line = -1,
                     Column = -1,
                 });
@@ -200,11 +211,11 @@ namespace Narratoria.Core
 
             // ===================== Symbol Table Checking =====================
             // Get current symbol table and all referenced tables
-            var table = _tableManager.GetFileSymbolTable(filePath);
+            /* var table = _tableManager.GetFileSymbolTable(filePath);
             List<FileSymbolTable> all_tables = [table];
             foreach (var reference in table.References)
             {
-                var ref_table = _tableManager.GetFileSymbolTable(reference);
+                var ref_table = _tableManager.GetFileSymbolTable(reference[0].Uri);
                 if (ref_table == null)
                 {
                     Report(new Diagnostic
@@ -240,7 +251,7 @@ namespace Narratoria.Core
                     {
                         Report(new Diagnostic
                         {
-                            Message = $"[Compiler] Undefined label \"{labelName}\" used in file: {pos.FilePath}.",
+                            Message = $"[Compiler] Undefined label \"{labelName}\".",
                             Line = pos.Line,
                             Column = pos.Column,
                             Severity = Diagnostic.SeverityLevel.Error,
@@ -252,11 +263,23 @@ namespace Narratoria.Core
                 {
                     foreach (var pos in defPositions)
                     {
+                        int targetLine;
+                        int targetColumn;
+                        if (pos.Uri == table.Uri)
+                        {
+                            targetLine = pos.Line;
+                            targetColumn = pos.Column;
+                        }
+                        else
+                        {
+                            targetLine = table.References[pos.Uri][0].Line;
+                            targetColumn = table.References[pos.Uri][0].Column;
+                        }
                         Report(new Diagnostic
                         {
-                            Message = $"[Compiler] Duplicate definition of label \"{labelName}\" found in file: {pos.FilePath}.",
-                            Line = pos.Line,
-                            Column = pos.Column,
+                            Message = $"[Compiler] Duplicate definition of label \"{labelName}\".",
+                            Line = targetLine,
+                            Column = targetColumn,
                             Severity = Diagnostic.SeverityLevel.Error,
                         });
                     }
@@ -311,7 +334,7 @@ namespace Narratoria.Core
                         });
                     }
                 }
-            }
+            } */
             // ===================== Symbol Table Checking End =====================
 
             DetachDiagnosticListener(tempListener);
@@ -320,6 +343,8 @@ namespace Narratoria.Core
                 Success = tempListener.Counts.TryGetValue(Diagnostic.SeverityLevel.Error, out int errorCount) ? errorCount == 0 : true,
                 Diagnostics = tempListener.GetAll(),
                 SirSet = sirSet,
+                Uri = ,
+                Timestamp = File.GetLastWriteTimeUtc(filePath).Ticks,
             };
         }
     }
@@ -329,6 +354,8 @@ namespace Narratoria.Core
         public required bool Success { get; init; }
         public required List<Diagnostic> Diagnostics { get; init; }
         public required SIRSet SirSet { get; init; }
+        public required string Uri { get; init; }
+        public long Timestamp { get; init; }
     }
 
     /// <summary>
@@ -350,14 +377,14 @@ namespace Narratoria.Core
             _exprBuilder.SetCurrentLabel(context.LabelName.Lexeme);
             _table.AddLabelDef(context.LabelName.Lexeme, new SymbolPosition
             {
-                FilePath = _table.FilePath,
+                Uri = _table.Uri,
                 Line = context.LabelName.Line,
                 Column = context.LabelName.Column,
             });
             SIR_Label label = new()
             {
                 LabelName = context.LabelName.Lexeme,
-                Source = _table.FilePath,
+                Source = _table.Uri,
                 Line = context.Line,
                 Column = context.Column,
             };
@@ -400,7 +427,7 @@ namespace Narratoria.Core
         {
             _table.AddLabelUsage(context.TargetLabel.Lexeme, new SymbolPosition
             {
-                FilePath = _table.FilePath,
+                Uri = _table.Uri,
                 Line = context.TargetLabel.Line,
                 Column = context.TargetLabel.Column,
             });
@@ -416,7 +443,7 @@ namespace Narratoria.Core
         {
             _table.AddLabelUsage(context.TargetLabel.Lexeme, new SymbolPosition
             {
-                FilePath = _table.FilePath,
+                Uri = _table.Uri,
                 Line = context.TargetLabel.Line,
                 Column = context.TargetLabel.Column,
             });
@@ -445,13 +472,13 @@ namespace Narratoria.Core
             var varName = _exprBuilder.GetVariableName(context.Variable);
             _table.AddVariableUsage(varName, new SymbolPosition
             {
-                FilePath = _table.FilePath,
+                Uri = _table.Uri,
                 Line = context.Value.Line,
                 Column = context.Value.Column,
             });
             _table.AddVariableDef(varName, new SymbolPosition
             {
-                FilePath = _table.FilePath,
+                Uri = _table.Uri,
                 Line = context.Variable.Line,
                 Column = context.Variable.Column,
             });
@@ -666,7 +693,7 @@ namespace Narratoria.Core
                     var varName = GetVariableName(context.Value);
                     _table.AddVariableUsage(varName, new SymbolPosition
                     {
-                        FilePath = _table.FilePath,
+                        Uri = _table.Uri,
                         Line = context.Value.Line,
                         Column = context.Value.Column,
                     });
