@@ -28,8 +28,7 @@ public class Program
         } */
 
         var executer = new Executer();
-        var tableManager = new SymbolTableManager();
-        var compiler = new Compiler(tableManager);
+        var compiler = new Compiler();
         var result = compiler.Compile("../../../TestScripts/text.narr");
 
         Console.ForegroundColor = ConsoleColor.Red;

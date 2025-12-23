@@ -3,12 +3,12 @@ namespace Narratoria.Core
     public class Executer
     {
         private readonly LinkedList<SIR> _execQueue = new();
-        private SIRSet? _currentSet = null;
+        private LabelSet? _currentSet = null;
 
         private readonly Runtime _runtime = new();
         public Runtime Runtime => _runtime;
 
-        public virtual void Execute(SIRSet set, string? entranceLabel = null)
+        public virtual void Execute(LabelSet set, string? entranceLabel = null)
         {
             _currentSet = set;
             // Clear previous variables, but keep functions

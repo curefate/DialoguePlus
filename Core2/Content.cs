@@ -4,10 +4,7 @@ using System.Text;
 namespace Narratoria.Core
 {
     public sealed record SourceContent(
-        string Text,
-        string? ETag = null,
-        DateTimeOffset? LastModified = null,
-        Encoding? Encoding = null
+        string Text
     );
 
     public interface IContentProvider
@@ -26,23 +23,46 @@ namespace Narratoria.Core
 
         public async Task<SourceContent> OpenTextAsync(Uri uri, CancellationToken ct = default)
         {
+            if (!File.Exists(uri.LocalPath))
+                throw new FileNotFoundException($"File not found: {uri.LocalPath}");
             using var fs = File.OpenRead(uri.LocalPath);
             using var sr = new StreamReader(fs, detectEncodingFromByteOrderMarks: true);
             var text = await sr.ReadToEndAsync(ct);
             var info = new FileInfo(uri.LocalPath);
             return new SourceContent(
-                text,
-                ETag: null,
-                LastModified: info.Exists ? info.LastWriteTimeUtc : null,
-                Encoding: sr.CurrentEncoding
+                text
             );
         }
+    }
+
+    public sealed class CacheContentProvider : IContentProvider
+    {
+        private readonly ConcurrentDictionary<Uri, SourceContent> _cache;
+
+        public CacheContentProvider(ConcurrentDictionary<Uri, SourceContent>? cache = null)
+        {
+            _cache = cache ?? new ConcurrentDictionary<Uri, SourceContent>();
+        }
+
+        public bool CanHandle(Uri uri) => _cache.ContainsKey(uri);
+
+        public Task<bool> ExistsAsync(Uri uri, CancellationToken ct = default)
+            => Task.FromResult(_cache.ContainsKey(uri));
+
+        public Task<SourceContent> OpenTextAsync(Uri uri, CancellationToken ct = default)
+            => Task.FromResult(_cache[uri]);
+
+        public void AddOrUpdate(Uri uri, string text)
+            => _cache.AddOrUpdate(uri, new SourceContent(text), (_, __) => new SourceContent(text));
+
+        public void Remove(Uri uri)
+            => _cache.TryRemove(uri, out _);
     }
 
     public interface IContentResolver
     {
         Task<bool> ExistsAsync(string sourceId, CancellationToken ct = default);
-        Task<SourceContent> OpenTextAsync(string sourceId, CancellationToken ct = default);
+        Task<SourceContent> GetTextAsync(string sourceId, CancellationToken ct = default);
     }
 
     public sealed class ContentResolver : IContentResolver
@@ -61,7 +81,7 @@ namespace Narratoria.Core
             return await GetProvider(uri).ExistsAsync(uri, ct);
         }
 
-        public async Task<SourceContent> OpenTextAsync(string sourceId, CancellationToken ct = default)
+        public async Task<SourceContent> GetTextAsync(string sourceId, CancellationToken ct = default)
         {
             var uri = Normalize(sourceId);
             return await GetProvider(uri).OpenTextAsync(uri, ct);

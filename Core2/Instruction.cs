@@ -1,6 +1,6 @@
 namespace Narratoria.Core
 {
-    public class SIRSet
+    public class LabelSet
     {
         public static readonly string DefaultEntranceLabel = "@system/__main__";
         public Dictionary<string, SIR_Label> Labels { get; } = [];
@@ -16,7 +16,7 @@ namespace Narratoria.Core
     public class SIR_Label : SIR
     {
         public required string LabelName { get; init; }
-        public required string Source { get; init; }
+        public required string SourceID { get; init; }
         public List<SIR> Statements { get; } = [];
     }
 

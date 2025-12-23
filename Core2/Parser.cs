@@ -1,21 +1,26 @@
 namespace Narratoria.Core
 {
-    public class Parser : BaseDiagnosticReporter
+    public class Parser
     {
+        private readonly DiagnosticEngine _diagnostics;
+
         private readonly List<Token> _tokens;
         private int _position = 0;
 
-        public Parser(IEnumerable<Token> tokens)
+        public Parser(IEnumerable<Token> tokens, DiagnosticEngine? diagnostics = null)
         {
-            _tokens = [.. tokens];
+            _tokens = tokens.ToList();
+            _diagnostics = diagnostics ?? new DiagnosticEngine();
         }
-        public Parser(List<Token> tokens)
+        public Parser(List<Token> tokens, DiagnosticEngine? diagnostics = null)
         {
             _tokens = tokens;
+            _diagnostics = diagnostics ?? new DiagnosticEngine();
         }
-        public Parser(Lexer lexer)
+        public Parser(Lexer lexer, DiagnosticEngine? diagnostics = null)
         {
             _tokens = [.. lexer.Tokenize()];
+            _diagnostics = diagnostics ?? new DiagnosticEngine();
         }
 
         private Token Current => _position < _tokens.Count ? _tokens[_position] : _tokens[^1];
@@ -57,7 +62,7 @@ namespace Narratoria.Core
         private void Recover(Exception ex)
         {
             // 记录诊断信息
-            Report(new Diagnostic
+            _diagnostics.Report(new Diagnostic
             {
                 Message = $"[Parser] {ex.Message}",
                 Line = Current.Line,
@@ -74,7 +79,7 @@ namespace Narratoria.Core
             if (Match(TokenType.Linebreak)) Consume();
             // while (Match(TokenType.Dedent, TokenType.Indent)) Consume();
 
-            Report(new Diagnostic
+            _diagnostics.Report(new Diagnostic
             {
                 Message = $"[Parser] Recovered from error. Current token: {Current}",
                 Line = Current.Line,

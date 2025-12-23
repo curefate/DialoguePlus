@@ -3,8 +3,11 @@ namespace Narratoria.Core
     using System.Text;
     using System.Text.RegularExpressions;
 
-    public class Lexer : BaseDiagnosticReporter
+    public class Lexer
     {
+        // Diagnostics
+        private readonly DiagnosticEngine _diagnostics;
+
         // Source Stream
         private readonly StreamReader _inputStream;
         private int _line = 0;
@@ -145,7 +148,7 @@ namespace Narratoria.Core
                 // If there is any error char at the end of the line
                 if (errorBuffer.Length > 0)
                 {
-                    Report(new Diagnostic
+                    _diagnostics.Report(new Diagnostic
                     {
                         Message = $"[Lexer] Unrecognized token: {errorBuffer}",
                         Line = _line,
@@ -195,9 +198,10 @@ namespace Narratoria.Core
             };
         }
 
-        public Lexer(StreamReader inputStream)
+        public Lexer(StreamReader inputStream, DiagnosticEngine? diagnostics = null)
         {
             this._inputStream = inputStream;
+            this._diagnostics = diagnostics ?? new DiagnosticEngine();
         }
     }
 }
