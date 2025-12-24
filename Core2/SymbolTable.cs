@@ -3,7 +3,7 @@ namespace Narratoria.Core
     public class SymbolPosition
     {
         public required string SourceID { get; init; }
-        public required string Label { get; init; }
+        public required string? Label { get; init; }
         public required int Line { get; init; }
         public required int Column { get; init; }
     }
@@ -92,6 +92,52 @@ namespace Narratoria.Core
         {
             _fileTables.TryGetValue(uri, out var table);
             return table!;
+        }
+
+        public List<SymbolPosition> FindLabelDefinition(string uri, string labelName)
+        {
+            var currentTable = GetFileSymbolTable(uri);
+            List<FileSymbolTable> allTables = [];
+            allTables.Add(currentTable);
+            foreach (var reference in currentTable.References)
+            {
+                allTables.Add(GetFileSymbolTable(reference.Key));
+            }
+            List<SymbolPosition> results = [];
+            foreach (var table in allTables)
+            {
+                foreach (var def in table.LabelDefs)
+                {
+                    if (def.Key == labelName)
+                    {
+                        results.AddRange(def.Value);
+                    }
+                }
+            }
+            return results;
+        }
+
+        public List<SymbolPosition> FindVariableDefinition(string uri, string variableName)
+        {
+            var currentTable = GetFileSymbolTable(uri);
+            List<FileSymbolTable> allTables = [];
+            allTables.Add(currentTable);
+            foreach (var reference in currentTable.References)
+            {
+                allTables.Add(GetFileSymbolTable(reference.Key));
+            }
+            List<SymbolPosition> results = [];
+            foreach (var table in allTables)
+            {
+                foreach (var def in table.VariableDefs)
+                {
+                    if (def.Key == variableName)
+                    {
+                        results.AddRange(def.Value);
+                    }
+                }
+            }
+            return results;
         }
 
         public override string ToString()

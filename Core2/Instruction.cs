@@ -17,7 +17,7 @@ namespace Narratoria.Core
     {
         public required string LabelName { get; init; }
         public required string SourceID { get; init; }
-        public List<SIR> Statements { get; } = [];
+        public List<SIR> Statements { get; init; } = [];
     }
 
     public class SIR_Dialogue : SIR

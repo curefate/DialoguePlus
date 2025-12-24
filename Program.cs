@@ -40,7 +40,7 @@ public class Program
 
         if (result.Success)
         {
-            executer.Execute(result.SirSet);
+            executer.Execute(result.Labels);
         }
         else
         {
