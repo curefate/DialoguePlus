@@ -347,7 +347,7 @@ namespace Narratoria.Core
 
         public string GetVariableName(Token variableToken)
         {
-            return variableToken.Lexeme.Contains('.') ? variableToken.Lexeme[1..] : $"{CurrentLabel}.{variableToken.Lexeme[1..]}";
+            return variableToken.Lexeme[1..]; // Remove the leading $
         }
 
         public override Expression VisitFString(AST_FString context)

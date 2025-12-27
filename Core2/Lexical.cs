@@ -37,18 +37,18 @@ namespace Narratoria.Core
             // Math
             new LexicalDefinition(TokenType.Plus, "\\+"),
             new LexicalDefinition(TokenType.Minus, "-"),
+            new LexicalDefinition(TokenType.Power, "\\*\\*"),
             new LexicalDefinition(TokenType.Multiply, "\\*"),
             new LexicalDefinition(TokenType.Divide, "/"),
             new LexicalDefinition(TokenType.Modulo, "%"),
-            new LexicalDefinition(TokenType.Power, "\\^"),
             // Assignment
             new LexicalDefinition(TokenType.Assign, "="),
             new LexicalDefinition(TokenType.PlusAssign, "\\+="),
             new LexicalDefinition(TokenType.MinusAssign, "-="),
+            new LexicalDefinition(TokenType.PowerAssign, "\\*\\*="),
             new LexicalDefinition(TokenType.MultiplyAssign, "\\*="),
             new LexicalDefinition(TokenType.DivideAssign, "/="),
             new LexicalDefinition(TokenType.ModuloAssign, "%="),
-            new LexicalDefinition(TokenType.PowerAssign, "\\^="),
             // Comparison & Logic
             new LexicalDefinition(TokenType.Less, "<"),
             new LexicalDefinition(TokenType.Greater, ">"),
@@ -71,7 +71,7 @@ namespace Narratoria.Core
             // Literals
             new LexicalDefinition(TokenType.Number, "-?\\d+(\\.\\d+)?"),
             new LexicalDefinition(TokenType.Boolean, "\\b(true|false)\\b"),
-            new LexicalDefinition(TokenType.Variable, "\\$[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)?"),
+            new LexicalDefinition(TokenType.Variable, "\\$(global\\.)?[a-zA-Z_][a-zA-Z0-9_]*"),
             new LexicalDefinition(TokenType.Identifier, "[a-zA-Z_][a-zA-Z0-9_]*"),
 
             // Fstring
@@ -106,10 +106,10 @@ namespace Narratoria.Core
             // Math
             new LexicalDefinition(TokenType.Plus, "\\+"),
             new LexicalDefinition(TokenType.Minus, "-"),
+            new LexicalDefinition(TokenType.Power, "\\*\\*"),
             new LexicalDefinition(TokenType.Multiply, "\\*"),
             new LexicalDefinition(TokenType.Divide, "/"),
             new LexicalDefinition(TokenType.Modulo, "%"),
-            new LexicalDefinition(TokenType.Power, "\\^"),
             // Comparison & Logic
             new LexicalDefinition(TokenType.Less, "<"),
             new LexicalDefinition(TokenType.Greater, ">"),
@@ -130,7 +130,7 @@ namespace Narratoria.Core
             // Literals
             new LexicalDefinition(TokenType.Number, "-?\\d+(\\.\\d+)?"),
             new LexicalDefinition(TokenType.Boolean, "\\b(true|false)\\b"),
-            new LexicalDefinition(TokenType.Variable, "\\$[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)?"),
+            new LexicalDefinition(TokenType.Variable, "\\$(global\\.)?[a-zA-Z_][a-zA-Z0-9_]*"),
             new LexicalDefinition(TokenType.Identifier, "[a-zA-Z_][a-zA-Z0-9_]*"),
 
             // Fstring

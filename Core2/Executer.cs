@@ -171,7 +171,7 @@ namespace Narratoria.Core
         {
             if (instructions == null || instructions.Count == 0)
             {
-                throw new ArgumentException("Instructions list cannot be null or empty.", nameof(instructions));
+                return;
             }
             if (toFront)
             {

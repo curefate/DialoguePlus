@@ -12,10 +12,11 @@ label A:
 jump A
 
 label B:
-    $temp_num = 10 + 3 * 2 ^ 2
+    $temp_num = 10 + 3 * 2 ** 2
     $temp_bool = !false or 0 > 1
     "$temp_num is {$temp_num}, $temp_bool is {$temp_bool}"
     tour C
+    # "{$B.temp_num}"
     if $temp_num > 0 and not $temp_bool:
         "1"
     else:
