@@ -118,4 +118,9 @@ namespace Narratoria.Core
             return sb.ToString();
         }
     }
+
+    public class Internal_SIR_Pop : SIR
+    {
+        static public readonly Internal_SIR_Pop Instance = new();
+    }
 }

@@ -10,9 +10,43 @@ namespace Narratoria.Core
     {
         internal VariableRegistry() { }
 
-        private readonly Dictionary<string, TypedVar> variables = [];
+        private readonly Dictionary<string, TypedVar> _globalScope = [];
+        private readonly Stack<Dictionary<string, TypedVar>> _tempScopeStack = new([new Dictionary<string, TypedVar>()]);
+        private Dictionary<string, TypedVar> _tempScope
+        {
+            get
+            {
+                if (_tempScopeStack.Count > 0)
+                    return _tempScopeStack.Peek();
+                var newScope = new Dictionary<string, TypedVar>();
+                _tempScopeStack.Push(newScope);
+                return newScope;
+            }
+        }
 
-        public void Clear() => variables.Clear();
+        public void Clear()
+        {
+            _globalScope.Clear();
+            _tempScopeStack.Clear();
+            NewTempScope();
+        }
+
+        public void NewTempScope()
+        {
+            _tempScopeStack.Push(new Dictionary<string, TypedVar>());
+        }
+
+        public void PopTempScope()
+        {
+            if (_tempScopeStack.Count > 1)
+            {
+                _tempScopeStack.Pop();
+            }
+            else
+            {
+                _tempScope.Clear();
+            }
+        }
 
         public void Set(string varName, object value)
         {
@@ -31,63 +65,65 @@ namespace Narratoria.Core
             {
                 throw new ArgumentException($"Unsupported type '{type.Name}' for variable '{varName}'. Supported types are string, int, float, and bool.", nameof(value));
             }
-            if (variables.ContainsKey(varName))
+            var currentScope = varName.StartsWith("global.") ? _globalScope : _tempScope;
+            if (currentScope.ContainsKey(varName))
             {
                 // Check if the type matches the existing variable
                 /* if (variables[varName].Type != type)
                 {
                     throw new InvalidOperationException($"Variable '{varName}' already exists with type '{variables[varName].Type.Name}', cannot assign value of type '{type.Name}'. Supported types are string, int, float, and bool.");
                 } */
-                variables[varName] = new TypedVar(value, type);
+                currentScope[varName] = new TypedVar(value, type);
             }
             else
             {
-                variables.Add(varName, new TypedVar(value, type));
+                currentScope.Add(varName, new TypedVar(value, type));
             }
         }
 
         public TypedVar Get(string varName)
         {
-            if (variables.TryGetValue(varName, out var variable))
+            var currentScope = varName.StartsWith("global.") ? _globalScope : _tempScope;
+            if (currentScope.TryGetValue(varName, out var variable))
             {
                 return variable;
             }
-            throw new KeyNotFoundException($"Variable '{varName}' not found in the interpreter's variable dictionary.");
+            throw new KeyNotFoundException($"Variable '{varName}' not found.");
         }
     }
 
     public class FunctionRegistry
     {
         internal FunctionRegistry() { }
-        private readonly Dictionary<string, Delegate> functions = [];
-        public void Clear() => functions.Clear();
+        private readonly Dictionary<string, Delegate> _functions = [];
+        public void Clear() => _functions.Clear();
         public void AddFunction<TResult>(Func<TResult> func, string funcName = "")
-            => functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
+            => _functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
         public void AddFunction<T0, TResult>(Func<T0, TResult> func, string funcName = "")
-            => functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
+            => _functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
         public void AddFunction<T0, T1, TResult>(Func<T0, T1, TResult> func, string funcName = "")
-            => functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
+            => _functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
         public void AddFunction<T0, T1, T2, TResult>(Func<T0, T1, T2, TResult> func, string funcName = "")
-            => functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
+            => _functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
         public void AddFunction<T0, T1, T2, T3, TResult>(Func<T0, T1, T2, T3, TResult> func, string funcName = "")
-            => functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
+            => _functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
         public void AddFunction<T0, T1, T2, T3, T4, TResult>(Func<T0, T1, T2, T3, T4, TResult> func, string funcName = "")
-            => functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
+            => _functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
         public void AddFunction(Action action, string funcName = "")
-            => functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
+            => _functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
         public void AddFunction<T0>(Action<T0> action, string funcName = "")
-            => functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
+            => _functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
         public void AddFunction<T0, T1>(Action<T0, T1> action, string funcName = "")
-            => functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
+            => _functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
         public void AddFunction<T0, T1, T2>(Action<T0, T1, T2> action, string funcName = "")
-            => functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
+            => _functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
         public void AddFunction<T0, T1, T2, T3>(Action<T0, T1, T2, T3> action, string funcName = "")
-            => functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
+            => _functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
         public void AddFunction<T0, T1, T2, T3, T4>(Action<T0, T1, T2, T3, T4> action, string funcName = "")
-            => functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
+            => _functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
         public Delegate GetDelegate(string funcName)
         {
-            if (functions.TryGetValue(funcName, out var func))
+            if (_functions.TryGetValue(funcName, out var func))
             {
                 return func;
             }
@@ -95,7 +131,7 @@ namespace Narratoria.Core
         }
         public dynamic? Invoke(string funcName, params object[] args)
         {
-            if (functions.TryGetValue(funcName, out var func))
+            if (_functions.TryGetValue(funcName, out var func))
             {
                 try
                 {
@@ -122,7 +158,7 @@ namespace Narratoria.Core
         }
         public TResult Invoke<TResult>(string funcName)
         {
-            if (functions.TryGetValue(funcName, out var func) && func is Func<TResult> function)
+            if (_functions.TryGetValue(funcName, out var func) && func is Func<TResult> function)
             {
                 try
                 {
@@ -137,7 +173,7 @@ namespace Narratoria.Core
         }
         public TResult Invoke<T0, TResult>(string funcName, T0 arg0)
         {
-            if (functions.TryGetValue(funcName, out var func) && func is Func<T0, TResult> function)
+            if (_functions.TryGetValue(funcName, out var func) && func is Func<T0, TResult> function)
             {
                 try
                 {
@@ -152,7 +188,7 @@ namespace Narratoria.Core
         }
         public TResult Invoke<T0, T1, TResult>(string funcName, T0 arg0, T1 arg1)
         {
-            if (functions.TryGetValue(funcName, out var func) && func is Func<T0, T1, TResult> function)
+            if (_functions.TryGetValue(funcName, out var func) && func is Func<T0, T1, TResult> function)
             {
                 try
                 {
@@ -167,7 +203,7 @@ namespace Narratoria.Core
         }
         public TResult Invoke<T0, T1, T2, TResult>(string funcName, T0 arg0, T1 arg1, T2 arg2)
         {
-            if (functions.TryGetValue(funcName, out var func) && func is Func<T0, T1, T2, TResult> function)
+            if (_functions.TryGetValue(funcName, out var func) && func is Func<T0, T1, T2, TResult> function)
             {
                 try
                 {
@@ -182,7 +218,7 @@ namespace Narratoria.Core
         }
         public TResult Invoke<T0, T1, T2, T3, TResult>(string funcName, T0 arg0, T1 arg1, T2 arg2, T3 arg3)
         {
-            if (functions.TryGetValue(funcName, out var func) && func is Func<T0, T1, T2, T3, TResult> function)
+            if (_functions.TryGetValue(funcName, out var func) && func is Func<T0, T1, T2, T3, TResult> function)
             {
                 try
                 {
@@ -197,7 +233,7 @@ namespace Narratoria.Core
         }
         public TResult Invoke<T0, T1, T2, T3, T4, TResult>(string funcName, T0 arg0, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
         {
-            if (functions.TryGetValue(funcName, out var func) && func is Func<T0, T1, T2, T3, T4, TResult> function)
+            if (_functions.TryGetValue(funcName, out var func) && func is Func<T0, T1, T2, T3, T4, TResult> function)
             {
                 try
                 {
@@ -212,7 +248,7 @@ namespace Narratoria.Core
         }
         public void Invoke(string funcName)
         {
-            if (functions.TryGetValue(funcName, out var func) && func is Action action)
+            if (_functions.TryGetValue(funcName, out var func) && func is Action action)
             {
                 try
                 {
@@ -230,7 +266,7 @@ namespace Narratoria.Core
         }
         public void Invoke<T0>(string funcName, T0 arg0)
         {
-            if (functions.TryGetValue(funcName, out var func) && func is Action<T0> action)
+            if (_functions.TryGetValue(funcName, out var func) && func is Action<T0> action)
             {
                 try
                 {
@@ -248,7 +284,7 @@ namespace Narratoria.Core
         }
         public void Invoke<T0, T1>(string funcName, T0 arg0, T1 arg1)
         {
-            if (functions.TryGetValue(funcName, out var func) && func is Action<T0, T1> action)
+            if (_functions.TryGetValue(funcName, out var func) && func is Action<T0, T1> action)
             {
                 try
                 {
@@ -266,7 +302,7 @@ namespace Narratoria.Core
         }
         public void Invoke<T0, T1, T2>(string funcName, T0 arg0, T1 arg1, T2 arg2)
         {
-            if (functions.TryGetValue(funcName, out var func) && func is Action<T0, T1, T2> action)
+            if (_functions.TryGetValue(funcName, out var func) && func is Action<T0, T1, T2> action)
             {
                 try
                 {
@@ -284,7 +320,7 @@ namespace Narratoria.Core
         }
         public void Invoke<T0, T1, T2, T3>(string funcName, T0 arg0, T1 arg1, T2 arg2, T3 arg3)
         {
-            if (functions.TryGetValue(funcName, out var func) && func is Action<T0, T1, T2, T3> action)
+            if (_functions.TryGetValue(funcName, out var func) && func is Action<T0, T1, T2, T3> action)
             {
                 try
                 {
@@ -302,7 +338,7 @@ namespace Narratoria.Core
         }
         public void Invoke<T0, T1, T2, T3, T4>(string funcName, T0 arg0, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
         {
-            if (functions.TryGetValue(funcName, out var func) && func is Action<T0, T1, T2, T3, T4> action)
+            if (_functions.TryGetValue(funcName, out var func) && func is Action<T0, T1, T2, T3, T4> action)
             {
                 try
                 {

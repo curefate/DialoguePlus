@@ -5,14 +5,17 @@ namespace Narratoria.Core
         private readonly LinkedList<SIR> _execQueue = new();
         private LabelSet? _currentSet = null;
 
-        private readonly Runtime _runtime = new();
+        private readonly Runtime _runtime;
         public Runtime Runtime => _runtime;
+
+        public Executer(Runtime? runtime = null)
+        {
+            _runtime = runtime ?? new Runtime();
+        }
 
         public virtual void Execute(LabelSet set, string? entranceLabel = null)
         {
             _currentSet = set;
-            // Clear previous variables, but keep functions
-            _runtime.Variables.Clear();
             _execQueue.Clear();
 
             if (entranceLabel != null)
@@ -61,6 +64,9 @@ namespace Narratoria.Core
                 case SIR_If ifStmt:
                     ExecuteIf(ifStmt);
                     break;
+                case Internal_SIR_Pop:
+                    _runtime.Variables.PopTempScope();
+                    break;
                 default:
                     throw new NotSupportedException($"(Runtime Error) Unsupported instruction type");
             }
@@ -100,18 +106,18 @@ namespace Narratoria.Core
 
         private void ExecuteJump(SIR_Jump statement)
         {
-
             var target = _currentSet?.Labels[statement.TargetLabel] ?? throw new KeyNotFoundException($"(Runtime Error) Label '{statement.TargetLabel}' not found.[Ln {statement.Line}]");
             _execQueue.Clear();
+            _runtime.Variables.PopTempScope();
             Enqueue(target.Statements);
         }
 
         private void ExecuteTour(SIR_Tour statement)
         {
-
             var target = _currentSet?.Labels[statement.TargetLabel] ?? throw new KeyNotFoundException($"(Runtime Error) Label '{statement.TargetLabel}' not found.[Ln {statement.Line}]");
+            _runtime.Variables.NewTempScope();
+            _execQueue.AddFirst(Internal_SIR_Pop.Instance);
             Enqueue(target.Statements, true);
-
         }
 
         private void ExecuteCall(SIR_Call statement)

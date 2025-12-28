@@ -91,14 +91,14 @@ namespace Narratoria.Core
             return resultSet;
         }
 
-        private async Task CompileInternalAsync(string uri, string code, CancellationToken cancellationToken = default)
+        private async Task CompileInternalAsync(string uri, string code, CancellationToken cancellationToken = default, int line = -1, int column = -1)
         {
             if (ImportedLabelSets.ContainsKey(uri))
             {
                 return;
             }
 
-            var diagnostics = uri == SourceID ? Diagnostics : null;
+            var diagnostics = uri == SourceID ? Diagnostics : new DiagnosticEngine();
             var lexer = new Lexer(new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(code))), diagnostics);
             var parser = new Parser(lexer, diagnostics);
             var ast = parser.Parse();
@@ -113,7 +113,7 @@ namespace Narratoria.Core
                 try
                 {
                     var importCode = await GetSourceTextAsync(importUri, cancellationToken);
-                    await CompileInternalAsync(importUri, importCode, cancellationToken);
+                    await CompileInternalAsync(importUri, importCode, cancellationToken, import.Path.Line, import.Path.Column);
                     table.AddReference(importUri, new SymbolPosition
                     {
                         SourceID = uri,
@@ -194,6 +194,17 @@ namespace Narratoria.Core
 
             ImportedLabelSets.Add(uri, labelSet);
             SymbolTables.UpdateFileSymbols(table);
+
+            if (diagnostics?.Counts[Diagnostic.SeverityLevel.Error] > 0)
+            {
+                Diagnostics.Report(new Diagnostic
+                {
+                    Message = $"[Compiler] Compilation of '{uri}' failed with {diagnostics.Counts[Diagnostic.SeverityLevel.Error]} error(s).",
+                    Line = line,
+                    Column = column,
+                    Severity = Diagnostic.SeverityLevel.Warning
+                });
+            }
         }
 
         public async Task<CompileResult> CompileAsync(CancellationToken cancellationToken = default)
@@ -273,7 +284,7 @@ namespace Narratoria.Core
                                     EndLine = pos.Line,
                                     EndColumn = pos.Column + usage.Key.Length,
                                 },
-                                Severity = Diagnostic.SeverityLevel.Warning
+                                Severity = Diagnostic.SeverityLevel.Error
                             });
                         }
                         else
@@ -290,7 +301,7 @@ namespace Narratoria.Core
                                     EndLine = table.References[pos.SourceID][0].Line,
                                     EndColumn = table.References[pos.SourceID][0].Column + pos.SourceID.Length,
                                 },
-                                Severity = Diagnostic.SeverityLevel.Warning
+                                Severity = Diagnostic.SeverityLevel.Error
                             });
                         }
                     }
@@ -327,7 +338,7 @@ namespace Narratoria.Core
             var labels = CollectLabels();
             return new CompileResult
             {
-                Success = !Diagnostics.Counts.ContainsKey(Diagnostic.SeverityLevel.Error),
+                Success = Diagnostics.Counts[Diagnostic.SeverityLevel.Error] == 0,
                 Diagnostics = Diagnostics.GetAll(),
                 Labels = labels,
                 SourceID = SourceID,

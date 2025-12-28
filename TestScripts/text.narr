@@ -4,11 +4,13 @@ label A:
     me "Hello!" #blablabla
     "This is a \n test script!"
     speaker "1 plus 1 plus 1 equals {1+1+1} !"
+    "{$global.haha}"
     jump B
 
 # comment
 
 "Here to test top level statement."
+$global.haha = "hahaha!"
 jump A
 
 label B:
