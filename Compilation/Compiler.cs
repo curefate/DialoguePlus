@@ -6,6 +6,7 @@ namespace DialoguePlus.Compilation
 {
     public class Compiler
     {
+        public static string Version => "1.0.0";
         private readonly IContentResolver _resolver;
         private readonly Dictionary<string, CompileResult> _compileCache = [];
 
