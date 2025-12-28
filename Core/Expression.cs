@@ -1,7 +1,8 @@
-namespace Narratoria.Core
-{
-    using System.Text;
+using System.Text;
+using DialoguePlus.Execution;
 
+namespace DialoguePlus.Core
+{
     public class Expression
     {
         private ExpressionNode _root;

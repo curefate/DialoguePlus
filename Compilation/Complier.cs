@@ -1,6 +1,8 @@
 using System.Text;
+using DialoguePlus.Diagnostics;
+using DialoguePlus.Core;
 
-namespace Narratoria.Core
+namespace DialoguePlus.Compilation
 {
     public class Compiler
     {

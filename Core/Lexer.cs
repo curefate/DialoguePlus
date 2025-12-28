@@ -1,8 +1,9 @@
-namespace Narratoria.Core
-{
-    using System.Text;
-    using System.Text.RegularExpressions;
+using System.Text;
+using System.Text.RegularExpressions;
+using DialoguePlus.Diagnostics;
 
+namespace DialoguePlus.Core
+{
     public class Lexer
     {
         // Diagnostics

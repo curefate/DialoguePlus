@@ -1,4 +1,6 @@
-namespace Narratoria.Core
+using DialoguePlus.Diagnostics;
+
+namespace DialoguePlus.Core
 {
     public class Parser
     {

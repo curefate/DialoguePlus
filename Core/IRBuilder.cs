@@ -1,6 +1,7 @@
 using System.Globalization;
+using DialoguePlus.Diagnostics;
 
-namespace Narratoria.Core
+namespace DialoguePlus.Core
 {
     internal class IRBuilder : BaseVisitor<SIR>
     {

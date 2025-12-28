@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
-using System.Text;
 
-namespace Narratoria.Core
+namespace DialoguePlus.Compilation
 {
     public sealed record SourceContent(
         string Text

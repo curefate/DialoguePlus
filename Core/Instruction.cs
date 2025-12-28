@@ -1,4 +1,4 @@
-namespace Narratoria.Core
+namespace DialoguePlus.Core
 {
     public class LabelSet
     {

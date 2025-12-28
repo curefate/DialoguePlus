@@ -1,6 +1,4 @@
-using System.Text;
-
-namespace Narratoria.Core
+namespace DialoguePlus.Core
 {
     public enum TokenType
     {

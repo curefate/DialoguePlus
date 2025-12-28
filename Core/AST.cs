@@ -1,5 +1,4 @@
-
-namespace Narratoria.Core
+namespace DialoguePlus.Core
 {
     public abstract class ASTNode
     {

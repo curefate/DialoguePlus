@@ -1,4 +1,4 @@
-namespace Narratoria.Core
+namespace DialoguePlus.Execution
 {
     public class Runtime
     {

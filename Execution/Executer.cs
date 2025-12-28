@@ -1,4 +1,6 @@
-namespace Narratoria.Core
+using DialoguePlus.Core;
+
+namespace DialoguePlus.Execution
 {
     public class Executer
     {

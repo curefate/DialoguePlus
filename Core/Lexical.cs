@@ -1,8 +1,7 @@
+using System.Text.RegularExpressions;
 
-namespace Narratoria.Core
+namespace DialoguePlus.Core
 {
-    using System.Text.RegularExpressions;
-
     // =========================== Definition ===========================
 
     internal enum TokenrizeMode
