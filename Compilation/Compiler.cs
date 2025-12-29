@@ -306,7 +306,7 @@ namespace DialoguePlus.Compilation
             // Check variable
             foreach (var usage in table.VariableUsages)
             {
-                if (usage.Key.StartsWith(".global"))
+                if (usage.Key.StartsWith("global."))
                 {
                     continue; // Skip .global variables
                 }
