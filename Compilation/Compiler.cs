@@ -100,6 +100,7 @@ namespace DialoguePlus.Compilation
 
             var table = new FileSymbolTable { SourceID = uri };
             var labelSet = new LabelSet();
+            ImportedLabelSets.Add(uri, labelSet); // Prevent circular import
             var builder = new IRBuilder(table);
 
             foreach (var import in ast.Imports)
@@ -187,7 +188,7 @@ namespace DialoguePlus.Compilation
                 }
             }
 
-            ImportedLabelSets.Add(uri, labelSet);
+            ImportedLabelSets[uri] = labelSet;
             SymbolTables.UpdateFileSymbols(table);
 
             if (diagnostics?.Counts[Diagnostic.SeverityLevel.Error] > 0)
@@ -305,6 +306,10 @@ namespace DialoguePlus.Compilation
             // Check variable
             foreach (var usage in table.VariableUsages)
             {
+                if (usage.Key.StartsWith(".global"))
+                {
+                    continue; // Skip .global variables
+                }
                 var defpos = SymbolTables.FindVariableDefinition(SourceID, usage.Key);
                 if (defpos.Count == 0)
                 {

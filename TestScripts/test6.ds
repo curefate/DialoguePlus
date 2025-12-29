@@ -1,9 +1,0 @@
-label start:
-$a = 100
-"{$a}"
-$a *= 3
-"{$a}"
-$b = "hello"
-"{$b}"
-$b += " world"
-"{$b}"

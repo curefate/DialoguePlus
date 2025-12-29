@@ -1,8 +1,0 @@
-label start:
-$a = 10
-if not 10 > 0:
-    "Yes"
-else:
-    "No"
-"Done"
-blablabla
