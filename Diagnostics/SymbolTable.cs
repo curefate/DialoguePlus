@@ -88,6 +88,17 @@ namespace DialoguePlus.Diagnostics
             return _fileTables.ContainsKey(uri);
         }
 
+        public bool Merge(SymbolTableManager other)
+        {
+            bool changed = false;
+            foreach (var kvp in other._fileTables)
+            {
+                UpdateFileSymbols(kvp.Value);
+                changed = true;
+            }
+            return changed;
+        }
+
         public FileSymbolTable GetFileSymbolTable(string uri)
         {
             _fileTables.TryGetValue(uri, out var table);

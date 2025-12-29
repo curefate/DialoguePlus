@@ -8,7 +8,9 @@ namespace DialoguePlus.Compilation
     {
         public static string Version => "1.0.0";
         private readonly IContentResolver _resolver;
-        private readonly Dictionary<string, CompileResult> _compileCache = [];
+
+        private readonly SymbolTableManager _symbolTableManager = new();
+        public SymbolTableManager SymbolTables => _symbolTableManager;
 
         public Compiler(IContentResolver? resolver = null)
         {
@@ -21,23 +23,13 @@ namespace DialoguePlus.Compilation
         private static bool _IfPath(string pathOrUri)
             => !pathOrUri.StartsWith("file://") && !pathOrUri.StartsWith("http://") && !pathOrUri.StartsWith("https://");
 
-        public CompileResult? GetCachedCompileResult(string pathOrUri)
-        {
-            var sourceID = _IfPath(pathOrUri) ? _PathToUri(pathOrUri) : pathOrUri;
-            if (_compileCache.TryGetValue(sourceID, out var result))
-            {
-                return result;
-            }
-            return null;
-        }
-
         public CompileResult Compile(string pathOrUri)
         {
             var sourceID = _IfPath(pathOrUri) ? _PathToUri(pathOrUri) : pathOrUri;
             var session = new CompilationSession(sourceID, _resolver);
             var task = session.CompileAsync();
             task.Wait();
-            _compileCache[sourceID] = task.Result;
+            _symbolTableManager.Merge(session.SymbolTables);
             return task.Result;
         }
     }
