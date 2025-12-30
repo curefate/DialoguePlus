@@ -50,23 +50,37 @@ git fetch --all
 echo ""
 echo "Step 1: Creating old_unity branch from current main..."
 git checkout main
+
+# Check if old_unity already exists locally
+if git show-ref --verify --quiet refs/heads/old_unity; then
+    echo "Branch old_unity already exists locally, deleting it first..."
+    git branch -D old_unity
+fi
+
 git checkout -b old_unity
 if [ "$DRY_RUN" = true ]; then
     echo "[DRY-RUN] Would push: git push origin old_unity"
 else
-    git push origin old_unity
+    git push origin old_unity -f
 fi
 echo "✓ old_unity branch created$([ "$DRY_RUN" = true ] && echo " (dry-run)" || echo " and pushed")"
 
 echo ""
 echo "Step 2: Renaming console_dev to old_console..."
 git checkout console_dev
+
+# Check if old_console already exists locally
+if git show-ref --verify --quiet refs/heads/old_console; then
+    echo "Branch old_console already exists locally, deleting it first..."
+    git branch -D old_console
+fi
+
 git branch -m old_console
 if [ "$DRY_RUN" = true ]; then
     echo "[DRY-RUN] Would push: git push origin old_console"
     echo "[DRY-RUN] Would delete: git push origin --delete console_dev"
 else
-    git push origin old_console
+    git push origin old_console -f
     git push origin --delete console_dev
 fi
 echo "✓ console_dev renamed to old_console$([ "$DRY_RUN" = true ] && echo " (dry-run)" || echo "")"
