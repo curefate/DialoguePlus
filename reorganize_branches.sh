@@ -67,6 +67,13 @@ echo "✓ old_unity branch created$([ "$DRY_RUN" = true ] && echo " (dry-run)" |
 
 echo ""
 echo "Step 2: Renaming console_dev to old_console..."
+
+# Ensure we have the console_dev branch from remote
+if ! git show-ref --verify --quiet refs/heads/console_dev; then
+    echo "Fetching console_dev from remote..."
+    git fetch origin console_dev:console_dev
+fi
+
 git checkout console_dev
 
 # Check if old_console already exists locally
