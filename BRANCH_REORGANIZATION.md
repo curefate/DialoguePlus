@@ -82,24 +82,44 @@ Here's a complete script that does all the operations:
 # Branch Reorganization Script for DialoguePlus
 set -e
 
+# Parse arguments
+DRY_RUN=false
+if [ "$1" = "--dry-run" ] || [ "$1" = "-n" ]; then
+    DRY_RUN=true
+    echo "Running in DRY-RUN mode (no changes will be made)"
+fi
+
 echo "Fetching all branches..."
 git fetch --all
+
+if [ "$DRY_RUN" = false ]; then
+    echo "⚠️  WARNING: This will overwrite the main branch!"
+    read -p "Continue? (yes/no): " confirm
+    if [ "$confirm" != "yes" ]; then
+        echo "Cancelled."
+        exit 0
+    fi
+fi
 
 echo "Step 1: Creating old_unity from main..."
 git checkout main
 git checkout -b old_unity
-git push origin old_unity
+[ "$DRY_RUN" = true ] && echo "[DRY-RUN] Would push" || git push origin old_unity
 
 echo "Step 2: Renaming console_dev to old_console..."
 git checkout console_dev
 git branch -m old_console
-git push origin old_console
-git push origin --delete console_dev
+if [ "$DRY_RUN" = true ]; then
+    echo "[DRY-RUN] Would push and delete"
+else
+    git push origin old_console
+    git push origin --delete console_dev
+fi
 
 echo "Step 3: Updating main to match dev..."
 git checkout main
 git reset --hard dev
-git push origin main --force
+[ "$DRY_RUN" = true ] && echo "[DRY-RUN] Would force push" || git push origin main --force
 
 echo "Branch reorganization complete!"
 echo "Verifying branches..."
@@ -107,6 +127,11 @@ git branch -r | grep -E "origin/(main|old_unity|old_console|dev)"
 ```
 
 Save this script as `reorganize_branches.sh`, make it executable with `chmod +x reorganize_branches.sh`, and run it with `./reorganize_branches.sh`.
+
+**Test first with dry-run mode:**
+```bash
+./reorganize_branches.sh --dry-run
+```
 
 ## Safety Notes
 

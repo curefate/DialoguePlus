@@ -8,6 +8,13 @@
 
 set -e  # Exit on any error
 
+# Parse arguments
+DRY_RUN=false
+if [ "$1" = "--dry-run" ] || [ "$1" = "-n" ]; then
+    DRY_RUN=true
+    echo "Running in DRY-RUN mode (no changes will be made)"
+fi
+
 echo "=========================================="
 echo "DialoguePlus Branch Reorganization Script"
 echo "=========================================="
@@ -19,6 +26,24 @@ if ! git rev-parse --git-dir > /dev/null 2>&1; then
     exit 1
 fi
 
+if [ "$DRY_RUN" = false ]; then
+    # Warning message
+    echo "⚠️  WARNING: This script will:"
+    echo "   1. Create a new branch 'old_unity' from current 'main'"
+    echo "   2. Rename 'console_dev' to 'old_console'"
+    echo "   3. OVERWRITE 'main' with contents from 'dev' (using --force)"
+    echo ""
+    echo "This operation will change the default branch content!"
+    echo ""
+    read -p "Do you want to continue? (yes/no): " confirm
+
+    if [ "$confirm" != "yes" ]; then
+        echo "Operation cancelled."
+        exit 0
+    fi
+fi
+
+echo ""
 echo "Fetching all branches from remote..."
 git fetch --all
 
@@ -26,23 +51,36 @@ echo ""
 echo "Step 1: Creating old_unity branch from current main..."
 git checkout main
 git checkout -b old_unity
-git push origin old_unity
-echo "✓ old_unity branch created and pushed"
+if [ "$DRY_RUN" = true ]; then
+    echo "[DRY-RUN] Would push: git push origin old_unity"
+else
+    git push origin old_unity
+fi
+echo "✓ old_unity branch created$([ "$DRY_RUN" = true ] && echo " (dry-run)" || echo " and pushed")"
 
 echo ""
 echo "Step 2: Renaming console_dev to old_console..."
 git checkout console_dev
 git branch -m old_console
-git push origin old_console
-git push origin --delete console_dev
-echo "✓ console_dev renamed to old_console"
+if [ "$DRY_RUN" = true ]; then
+    echo "[DRY-RUN] Would push: git push origin old_console"
+    echo "[DRY-RUN] Would delete: git push origin --delete console_dev"
+else
+    git push origin old_console
+    git push origin --delete console_dev
+fi
+echo "✓ console_dev renamed to old_console$([ "$DRY_RUN" = true ] && echo " (dry-run)" || echo "")"
 
 echo ""
 echo "Step 3: Updating main to match dev..."
 git checkout main
 git reset --hard dev
-git push origin main --force
-echo "✓ main branch updated with dev contents"
+if [ "$DRY_RUN" = true ]; then
+    echo "[DRY-RUN] Would force push: git push origin main --force"
+else
+    git push origin main --force
+fi
+echo "✓ main branch updated with dev contents$([ "$DRY_RUN" = true ] && echo " (dry-run)" || echo "")"
 
 echo ""
 echo "=========================================="
