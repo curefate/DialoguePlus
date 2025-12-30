@@ -61,7 +61,7 @@ git checkout -b old_unity
 if [ "$DRY_RUN" = true ]; then
     echo "[DRY-RUN] Would push: git push origin old_unity"
 else
-    git push origin old_unity -f
+    git push origin old_unity
 fi
 echo "✓ old_unity branch created$([ "$DRY_RUN" = true ] && echo " (dry-run)" || echo " and pushed")"
 
@@ -80,7 +80,7 @@ if [ "$DRY_RUN" = true ]; then
     echo "[DRY-RUN] Would push: git push origin old_console"
     echo "[DRY-RUN] Would delete: git push origin --delete console_dev"
 else
-    git push origin old_console -f
+    git push origin old_console
     git push origin --delete console_dev
 fi
 echo "✓ console_dev renamed to old_console$([ "$DRY_RUN" = true ] && echo " (dry-run)" || echo "")"
@@ -102,7 +102,10 @@ echo "Branch reorganization complete!"
 echo "=========================================="
 echo ""
 echo "Current remote branches:"
-git branch -r | grep -E "origin/(main|old_unity|old_console|dev)" || git branch -r
+if ! git branch -r | grep -E "origin/(main|old_unity|old_console|dev)"; then
+    echo "Showing all remote branches:"
+    git branch -r
+fi
 
 echo ""
 echo "Summary of changes:"
