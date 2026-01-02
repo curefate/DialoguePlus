@@ -1,12 +1,10 @@
 using System.Text;
-using DialoguePlus.Diagnostics;
-using DialoguePlus.Core;
 
-namespace DialoguePlus.Compilation
+namespace DialoguePlus.Core
 {
     public class Compiler
     {
-        public static string Version => "1.0.0";
+        public static string Version => "1.0.1";
         private readonly IContentResolver _resolver;
 
         private readonly SymbolTableManager _symbolTableManager = new();
@@ -43,7 +41,7 @@ namespace DialoguePlus.Compilation
         public long Timestamp { get; init; }
     }
 
-    public class CompilationSession
+    internal class CompilationSession
     {
         private IContentResolver _resolver;
 

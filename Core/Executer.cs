@@ -1,6 +1,4 @@
-using DialoguePlus.Core;
-
-namespace DialoguePlus.Execution
+namespace DialoguePlus.Core
 {
     public class Executer
     {

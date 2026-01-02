@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace DialoguePlus.Compilation
+namespace DialoguePlus.Core
 {
     public sealed record SourceContent(
         string Text

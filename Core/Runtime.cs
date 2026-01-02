@@ -1,4 +1,4 @@
-namespace DialoguePlus.Execution
+namespace DialoguePlus.Core
 {
     public class Runtime
     {

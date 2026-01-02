@@ -1,9 +1,8 @@
 using System.Globalization;
-using DialoguePlus.Diagnostics;
 
 namespace DialoguePlus.Core
 {
-    internal class IRBuilder : BaseVisitor<SIR>
+    public class IRBuilder : BaseVisitor<SIR>
     {
         private readonly FileSymbolTable _table;
         private readonly ExprBuilder _exprBuilder;

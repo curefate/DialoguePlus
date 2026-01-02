@@ -1,4 +1,4 @@
-namespace DialoguePlus.Diagnostics
+namespace DialoguePlus.Core
 {
     public class SymbolPosition
     {

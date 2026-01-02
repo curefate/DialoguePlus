@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace DialoguePlus.Diagnostics
+namespace DialoguePlus.Core
 {
     // Diagnostic
     public class DiagnosticEngine
