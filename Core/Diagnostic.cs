@@ -6,8 +6,15 @@ namespace DialoguePlus.Core
     public class DiagnosticEngine
     {
         private readonly ConcurrentQueue<Diagnostic> _bag = [];
-        public readonly ConcurrentDictionary<Diagnostic.SeverityLevel, int> Counts = new(
-            Enum.GetValues<Diagnostic.SeverityLevel>().ToDictionary(level => level, _ => 0));
+
+        public readonly ConcurrentDictionary<Diagnostic.SeverityLevel, int> Counts =
+            new(
+                Enum
+                    .GetValues(typeof(Diagnostic.SeverityLevel))
+                    .Cast<Diagnostic.SeverityLevel>()
+                    .ToDictionary(level => level, _ => 0)
+            );
+
 
         public virtual void Report(Diagnostic diagnostic)
         {

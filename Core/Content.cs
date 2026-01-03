@@ -26,7 +26,7 @@ namespace DialoguePlus.Core
                 throw new FileNotFoundException($"File not found: {uri.LocalPath}");
             using var fs = File.OpenRead(uri.LocalPath);
             using var sr = new StreamReader(fs, detectEncodingFromByteOrderMarks: true);
-            var text = await sr.ReadToEndAsync(ct);
+            var text = await sr.ReadToEndAsync();
             var info = new FileInfo(uri.LocalPath);
             return new SourceContent(
                 text

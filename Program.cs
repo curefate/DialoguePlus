@@ -1,5 +1,4 @@
-﻿using DialoguePlus.Compilation;
-using DialoguePlus.Execution;
+﻿using DialoguePlus.Core;
 
 public class Program
 {
