@@ -6,7 +6,7 @@ public class Program
     {
         var executer = new Executer();
         var compiler = new Compiler();
-        var result = compiler.Compile("../../../TestScripts/text.narr");
+        var result = compiler.Compile("TestScripts/text.dp");
 
         Console.ForegroundColor = ConsoleColor.Red;
         foreach (var diag in result.Diagnostics)
