@@ -1,5 +1,28 @@
-/bin
-/obj
-/.vscode
-*.sl
-*.sln
+
+# -----------------------------
+# OS-specific temporary files
+# -----------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*~
+.*.swp
+.*.swo
+
+# -----------------------------
+# IDE / Editor
+# -----------------------------
+.vs/
+.idea/
+.vscode/*
+!.vscode/tasks.json
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+
+# -----------------------------
+# .NET build artifacts
+# -----------------------------
+bin/
+obj/

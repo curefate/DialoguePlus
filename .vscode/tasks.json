@@ -1,0 +1,32 @@
+
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "run console",
+      "type": "shell",
+      "command": "dotnet run --project console/console.csproj",
+      "problemMatcher": "$msCompile",
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      }
+    },
+    {
+      "label": "build debug",
+      "type": "shell",
+      "command": "dotnet build src/DialoguePlus.Core.csproj -c Debug",
+      "problemMatcher": "$msCompile",
+      "group": "build",
+      "detail": "Build Core in Debug; no copy happens because the MSBuild Target is conditioned on Release."
+    },
+    {
+      "label": "build release",
+      "type": "shell",
+      "command": "dotnet build src/DialoguePlus.Core.csproj -c Release",
+      "problemMatcher": "$msCompile",
+      "group": "build",
+      "detail": "Build Core in Release; MSBuild Target will copy DLL+PDB to ../adapters/Unity/Assets/Plugins/."
+    }
+  ]
+}

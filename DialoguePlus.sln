@@ -1,0 +1,35 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "console", "console\console.csproj", "{4C074499-B055-7471-2414-75766D22C168}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DialoguePlus.Core", "src\DialoguePlus.Core.csproj", "{7E4240FC-B883-E09A-9959-4368BC64F8E4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4C074499-B055-7471-2414-75766D22C168}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C074499-B055-7471-2414-75766D22C168}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C074499-B055-7471-2414-75766D22C168}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C074499-B055-7471-2414-75766D22C168}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E4240FC-B883-E09A-9959-4368BC64F8E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E4240FC-B883-E09A-9959-4368BC64F8E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E4240FC-B883-E09A-9959-4368BC64F8E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E4240FC-B883-E09A-9959-4368BC64F8E4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7E4240FC-B883-E09A-9959-4368BC64F8E4} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {DFB524F3-2234-4B25-B0D1-1C3D038EF7D1}
+	EndGlobalSection
+EndGlobal
