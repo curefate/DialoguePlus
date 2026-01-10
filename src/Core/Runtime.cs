@@ -121,6 +121,8 @@ namespace DialoguePlus.Core
             => _functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
         public void AddFunction<T0, T1, T2, T3, T4>(Action<T0, T1, T2, T3, T4> action, string funcName = "")
             => _functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
+        public void AddFunction(Delegate func, string funcName)
+            => _functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
         public Delegate GetDelegate(string funcName)
         {
             if (_functions.TryGetValue(funcName, out var func))

@@ -75,7 +75,7 @@ namespace DialoguePlus.Core
     public class SIR_Call : SIR
     {
         public required string FunctionName { get; init; }
-        public List<Expression> Arguments { get; } = [];
+        public List<DPExpression> Arguments { get; } = [];
 
         public override string ToString()
         {
@@ -85,7 +85,7 @@ namespace DialoguePlus.Core
 
     public class SIR_Assign : SIR
     {
-        public required Expression Expression { get; init; }
+        public required DPExpression Expression { get; init; }
 
         public override string ToString()
         {
@@ -95,7 +95,7 @@ namespace DialoguePlus.Core
 
     public class SIR_If : SIR
     {
-        public required Expression Condition { get; init; }
+        public required DPExpression Condition { get; init; }
         public List<SIR> ThenBlock { get; } = [];
         public List<SIR> ElseBlock { get; } = [];
 

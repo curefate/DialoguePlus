@@ -2,13 +2,13 @@ using System.Text;
 
 namespace DialoguePlus.Core
 {
-    public class Expression
+    public class DPExpression
     {
         private ExpressionNode _root;
 
         public ExpressionNode Root => _root;
 
-        internal Expression(ExpressionNode root)
+        internal DPExpression(ExpressionNode root)
         {
             _root = root ?? throw new ArgumentNullException(nameof(root), "Root node cannot be null.");
         }
@@ -27,21 +27,21 @@ namespace DialoguePlus.Core
             return _root.ToString();
         }
 
-        public static Expression Constant(object value)
+        public static DPExpression Constant(object value)
         {
-            return new Expression(new ConstantNode(value));
+            return new DPExpression(new ConstantNode(value));
         }
 
-        public static Expression Variable(string variableName)
+        public static DPExpression Variable(string variableName)
         {
             if (string.IsNullOrWhiteSpace(variableName))
             {
                 throw new ArgumentException("Variable name cannot be null or empty.", nameof(variableName));
             }
-            return new Expression(new VariableNode(variableName));
+            return new DPExpression(new VariableNode(variableName));
         }
 
-        public static Expression Call(string functionName, params Expression[] arguments)
+        public static DPExpression Call(string functionName, params DPExpression[] arguments)
         {
             if (string.IsNullOrWhiteSpace(functionName))
             {
@@ -49,133 +49,133 @@ namespace DialoguePlus.Core
             }
             // *Disable null arguments to prevent issues with null nodes
             var argNodes = arguments?.Select(arg => arg?._root).Where(node => node != null).Cast<ExpressionNode>().ToList() ?? new List<ExpressionNode>();
-            return new Expression(new EmbedCallNode(functionName, argNodes));
+            return new DPExpression(new EmbedCallNode(functionName, argNodes));
         }
 
-        public static Expression FString(List<string> fragments, List<Expression> embed)
+        public static DPExpression FString(List<string> fragments, List<DPExpression> embed)
         {
             if (fragments == null) throw new ArgumentNullException(nameof(fragments), "Fragments cannot be null.");
             if (embed == null) throw new ArgumentNullException(nameof(embed), "Embed expressions cannot be null.");
             // *Disable null arguments to prevent issues with null nodes
             var embedNodes = embed.Select(e => e?._root).Where(node => node != null).Cast<ExpressionNode>().ToList();
-            return new Expression(new FStringNode(fragments, embedNodes));
+            return new DPExpression(new FStringNode(fragments, embedNodes));
         }
 
-        public static Expression Negate(Expression expression)
+        public static DPExpression Negate(DPExpression expression)
         {
             if (expression == null) throw new ArgumentNullException(nameof(expression), "Expression cannot be null.");
-            return new Expression(new UnaryOperationNode(UnaryOperator.Negate, expression._root));
+            return new DPExpression(new UnaryOperationNode(UnaryOperator.Negate, expression._root));
         }
 
-        public static Expression Not(Expression expression)
+        public static DPExpression Not(DPExpression expression)
         {
             if (expression == null) throw new ArgumentNullException(nameof(expression), "Expression cannot be null.");
-            return new Expression(new UnaryOperationNode(UnaryOperator.Not, expression._root));
+            return new DPExpression(new UnaryOperationNode(UnaryOperator.Not, expression._root));
         }
 
-        public static Expression Add(Expression left, Expression right)
+        public static DPExpression Add(DPExpression left, DPExpression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
             if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
-            return new Expression(new BinaryOperationNode(BinaryOperator.Add, left._root, right._root));
+            return new DPExpression(new BinaryOperationNode(BinaryOperator.Add, left._root, right._root));
         }
 
-        public static Expression Subtract(Expression left, Expression right)
+        public static DPExpression Subtract(DPExpression left, DPExpression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
             if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
-            return new Expression(new BinaryOperationNode(BinaryOperator.Subtract, left._root, right._root));
+            return new DPExpression(new BinaryOperationNode(BinaryOperator.Subtract, left._root, right._root));
         }
 
-        public static Expression Multiply(Expression left, Expression right)
+        public static DPExpression Multiply(DPExpression left, DPExpression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
             if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
-            return new Expression(new BinaryOperationNode(BinaryOperator.Multiply, left._root, right._root));
+            return new DPExpression(new BinaryOperationNode(BinaryOperator.Multiply, left._root, right._root));
         }
 
-        public static Expression Divide(Expression left, Expression right)
+        public static DPExpression Divide(DPExpression left, DPExpression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
             if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
-            return new Expression(new BinaryOperationNode(BinaryOperator.Divide, left._root, right._root));
+            return new DPExpression(new BinaryOperationNode(BinaryOperator.Divide, left._root, right._root));
         }
 
-        public static Expression Modulo(Expression left, Expression right)
+        public static DPExpression Modulo(DPExpression left, DPExpression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
             if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
-            return new Expression(new BinaryOperationNode(BinaryOperator.Modulo, left._root, right._root));
+            return new DPExpression(new BinaryOperationNode(BinaryOperator.Modulo, left._root, right._root));
         }
 
-        public static Expression Power(Expression left, Expression right)
+        public static DPExpression Power(DPExpression left, DPExpression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
             if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
-            return new Expression(new BinaryOperationNode(BinaryOperator.Power, left._root, right._root));
+            return new DPExpression(new BinaryOperationNode(BinaryOperator.Power, left._root, right._root));
         }
 
-        public static Expression Equal(Expression left, Expression right)
+        public static DPExpression Equal(DPExpression left, DPExpression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
             if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
-            return new Expression(new BinaryOperationNode(BinaryOperator.Equal, left._root, right._root));
+            return new DPExpression(new BinaryOperationNode(BinaryOperator.Equal, left._root, right._root));
         }
 
-        public static Expression NotEqual(Expression left, Expression right)
+        public static DPExpression NotEqual(DPExpression left, DPExpression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
             if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
-            return new Expression(new BinaryOperationNode(BinaryOperator.NotEqual, left._root, right._root));
+            return new DPExpression(new BinaryOperationNode(BinaryOperator.NotEqual, left._root, right._root));
         }
 
-        public static Expression LessThan(Expression left, Expression right)
+        public static DPExpression LessThan(DPExpression left, DPExpression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
             if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
-            return new Expression(new BinaryOperationNode(BinaryOperator.LessThan, left._root, right._root));
+            return new DPExpression(new BinaryOperationNode(BinaryOperator.LessThan, left._root, right._root));
         }
 
-        public static Expression GreaterThan(Expression left, Expression right)
+        public static DPExpression GreaterThan(DPExpression left, DPExpression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
             if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
-            return new Expression(new BinaryOperationNode(BinaryOperator.GreaterThan, left._root, right._root));
+            return new DPExpression(new BinaryOperationNode(BinaryOperator.GreaterThan, left._root, right._root));
         }
 
-        public static Expression LessThanOrEqual(Expression left, Expression right)
+        public static DPExpression LessThanOrEqual(DPExpression left, DPExpression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
             if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
-            return new Expression(new BinaryOperationNode(BinaryOperator.LessThanOrEqual, left._root, right._root));
+            return new DPExpression(new BinaryOperationNode(BinaryOperator.LessThanOrEqual, left._root, right._root));
         }
 
-        public static Expression GreaterThanOrEqual(Expression left, Expression right)
+        public static DPExpression GreaterThanOrEqual(DPExpression left, DPExpression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
             if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
-            return new Expression(new BinaryOperationNode(BinaryOperator.GreaterThanOrEqual, left._root, right._root));
+            return new DPExpression(new BinaryOperationNode(BinaryOperator.GreaterThanOrEqual, left._root, right._root));
         }
 
-        public static Expression AndAlso(Expression left, Expression right)
+        public static DPExpression AndAlso(DPExpression left, DPExpression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
             if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
-            return new Expression(new BinaryOperationNode(BinaryOperator.AndAlso, left._root, right._root));
+            return new DPExpression(new BinaryOperationNode(BinaryOperator.AndAlso, left._root, right._root));
         }
 
-        public static Expression OrElse(Expression left, Expression right)
+        public static DPExpression OrElse(DPExpression left, DPExpression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
             if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
-            return new Expression(new BinaryOperationNode(BinaryOperator.OrElse, left._root, right._root));
+            return new DPExpression(new BinaryOperationNode(BinaryOperator.OrElse, left._root, right._root));
         }
 
-        public static Expression Assign(Expression left, Expression right)
+        public static DPExpression Assign(DPExpression left, DPExpression right)
         {
             if (left == null) throw new ArgumentNullException(nameof(left), "Left expression cannot be null.");
             if (right == null) throw new ArgumentNullException(nameof(right), "Right expression cannot be null.");
-            return new Expression(new BinaryOperationNode(BinaryOperator.Assign, left._root, right._root));
+            return new DPExpression(new BinaryOperationNode(BinaryOperator.Assign, left._root, right._root));
         }
     }
 

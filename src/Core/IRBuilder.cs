@@ -128,7 +128,7 @@ namespace DialoguePlus.Core
                 Line = context.Variable.Line,
                 Column = context.Variable.Column,
             });
-            var variable = Expression.Variable(varName);
+            var variable = DPExpression.Variable(varName);
             var value = _exprBuilder.Visit(context.Value);
             return context.Operator.Type switch
             {
@@ -136,43 +136,43 @@ namespace DialoguePlus.Core
                 {
                     Line = context.Line,
                     Column = context.Column,
-                    Expression = Expression.Assign(variable, value),
+                    Expression = DPExpression.Assign(variable, value),
                 },
                 TokenType.PlusAssign => new SIR_Assign
                 {
                     Line = context.Line,
                     Column = context.Column,
-                    Expression = Expression.Assign(variable, Expression.Add(variable, value)),
+                    Expression = DPExpression.Assign(variable, DPExpression.Add(variable, value)),
                 },
                 TokenType.MinusAssign => new SIR_Assign
                 {
                     Line = context.Line,
                     Column = context.Column,
-                    Expression = Expression.Assign(variable, Expression.Subtract(variable, value)),
+                    Expression = DPExpression.Assign(variable, DPExpression.Subtract(variable, value)),
                 },
                 TokenType.MultiplyAssign => new SIR_Assign
                 {
                     Line = context.Line,
                     Column = context.Column,
-                    Expression = Expression.Assign(variable, Expression.Multiply(variable, value)),
+                    Expression = DPExpression.Assign(variable, DPExpression.Multiply(variable, value)),
                 },
                 TokenType.DivideAssign => new SIR_Assign
                 {
                     Line = context.Line,
                     Column = context.Column,
-                    Expression = Expression.Assign(variable, Expression.Divide(variable, value)),
+                    Expression = DPExpression.Assign(variable, DPExpression.Divide(variable, value)),
                 },
                 TokenType.ModuloAssign => new SIR_Assign
                 {
                     Line = context.Line,
                     Column = context.Column,
-                    Expression = Expression.Assign(variable, Expression.Modulo(variable, value)),
+                    Expression = DPExpression.Assign(variable, DPExpression.Modulo(variable, value)),
                 },
                 TokenType.PowerAssign => new SIR_Assign
                 {
                     Line = context.Line,
                     Column = context.Column,
-                    Expression = Expression.Assign(variable, Expression.Power(variable, value)),
+                    Expression = DPExpression.Assign(variable, DPExpression.Power(variable, value)),
                 },
                 _ => throw new NotImplementedException($"Unknown assignment operator: {context.Operator.Type}"),
             };
@@ -195,7 +195,7 @@ namespace DialoguePlus.Core
         }
     }
 
-    internal class ExprBuilder : BaseVisitor<Expression>
+    internal class ExprBuilder : BaseVisitor<DPExpression>
     {
         public string CurrentLabel;
         private readonly FileSymbolTable _table;
@@ -206,29 +206,29 @@ namespace DialoguePlus.Core
             _table = table;
         }
 
-        public override Expression VisitExprOr(AST_Expr_Or context)
+        public override DPExpression VisitExprOr(AST_Expr_Or context)
         {
             var ret = Visit(context.Left);
             for (int i = 0; i < context.Rights.Count; i++)
             {
                 var right = Visit(context.Rights[i]);
-                ret = Expression.OrElse(ret, right);
+                ret = DPExpression.OrElse(ret, right);
             }
             return ret;
         }
 
-        public override Expression VisitExprAnd(AST_Expr_And context)
+        public override DPExpression VisitExprAnd(AST_Expr_And context)
         {
             var ret = Visit(context.Left);
             for (int i = 0; i < context.Rights.Count; i++)
             {
                 var right = Visit(context.Rights[i]);
-                ret = Expression.AndAlso(ret, right);
+                ret = DPExpression.AndAlso(ret, right);
             }
             return ret;
         }
 
-        public override Expression VisitExprEquality(AST_Expr_Equality context)
+        public override DPExpression VisitExprEquality(AST_Expr_Equality context)
         {
             var left = Visit(context.Left);
             if (context.Operator == null || context.Right == null)
@@ -238,13 +238,13 @@ namespace DialoguePlus.Core
             var right = Visit(context.Right);
             return context.Operator.Type switch
             {
-                TokenType.Equal => Expression.Equal(left, right),
-                TokenType.NotEqual => Expression.NotEqual(left, right),
+                TokenType.Equal => DPExpression.Equal(left, right),
+                TokenType.NotEqual => DPExpression.NotEqual(left, right),
                 _ => throw new NotImplementedException($"Unknown equality operator: {context.Operator.Type}"),
             };
         }
 
-        public override Expression VisitExprComparison(AST_Expr_Comparison context)
+        public override DPExpression VisitExprComparison(AST_Expr_Comparison context)
         {
             var left = Visit(context.Left);
             if (context.Operator == null || context.Right == null)
@@ -254,15 +254,15 @@ namespace DialoguePlus.Core
             var right = Visit(context.Right);
             return context.Operator.Type switch
             {
-                TokenType.Less => Expression.LessThan(left, right),
-                TokenType.Greater => Expression.GreaterThan(left, right),
-                TokenType.LessEqual => Expression.LessThanOrEqual(left, right),
-                TokenType.GreaterEqual => Expression.GreaterThanOrEqual(left, right),
+                TokenType.Less => DPExpression.LessThan(left, right),
+                TokenType.Greater => DPExpression.GreaterThan(left, right),
+                TokenType.LessEqual => DPExpression.LessThanOrEqual(left, right),
+                TokenType.GreaterEqual => DPExpression.GreaterThanOrEqual(left, right),
                 _ => throw new NotImplementedException($"Unknown comparison operator: {context.Operator.Type}"),
             };
         }
 
-        public override Expression VisitExprAdditive(AST_Expr_Additive context)
+        public override DPExpression VisitExprAdditive(AST_Expr_Additive context)
         {
             var ret = Visit(context.Left);
             for (int i = 0; i < context.Rights.Count; i++)
@@ -270,15 +270,15 @@ namespace DialoguePlus.Core
                 var right = Visit(context.Rights[i].Right);
                 ret = context.Rights[i].Operator.Type switch
                 {
-                    TokenType.Plus => Expression.Add(ret, right),
-                    TokenType.Minus => Expression.Subtract(ret, right),
+                    TokenType.Plus => DPExpression.Add(ret, right),
+                    TokenType.Minus => DPExpression.Subtract(ret, right),
                     _ => throw new NotImplementedException($"Unknown additive operator: {context.Rights[i].Operator.Type}"),
                 };
             }
             return ret;
         }
 
-        public override Expression VisitExprMultiplicative(AST_Expr_Multiplicative context)
+        public override DPExpression VisitExprMultiplicative(AST_Expr_Multiplicative context)
         {
             var ret = Visit(context.Left);
             for (int i = 0; i < context.Rights.Count; i++)
@@ -286,27 +286,27 @@ namespace DialoguePlus.Core
                 var right = Visit(context.Rights[i].Right);
                 ret = context.Rights[i].Operator.Type switch
                 {
-                    TokenType.Multiply => Expression.Multiply(ret, right),
-                    TokenType.Divide => Expression.Divide(ret, right),
-                    TokenType.Modulo => Expression.Modulo(ret, right),
+                    TokenType.Multiply => DPExpression.Multiply(ret, right),
+                    TokenType.Divide => DPExpression.Divide(ret, right),
+                    TokenType.Modulo => DPExpression.Modulo(ret, right),
                     _ => throw new NotImplementedException($"Unknown multiplicative operator: {context.Rights[i].Operator.Type}"),
                 };
             }
             return ret;
         }
 
-        public override Expression VisitExprPower(AST_Expr_Power context)
+        public override DPExpression VisitExprPower(AST_Expr_Power context)
         {
             var left = Visit(context.Base);
             for (int i = 0; i < context.Exponents.Count; i++)
             {
                 var right = Visit(context.Exponents[i]);
-                left = Expression.Power(left, right);
+                left = DPExpression.Power(left, right);
             }
             return left;
         }
 
-        public override Expression VisitExprUnary(AST_Expr_Unary context)
+        public override DPExpression VisitExprUnary(AST_Expr_Unary context)
         {
             var primary = Visit(context.Primary);
             if (context.Operator == null)
@@ -315,21 +315,21 @@ namespace DialoguePlus.Core
             }
             return context.Operator.Type switch
             {
-                TokenType.Minus => Expression.Negate(primary),
+                TokenType.Minus => DPExpression.Negate(primary),
                 TokenType.Plus => primary,
-                TokenType.Not => Expression.Not(primary),
+                TokenType.Not => DPExpression.Not(primary),
                 _ => throw new NotImplementedException($"Unknown unary operator: {context.Operator.Type}"),
             };
         }
 
-        public override Expression VisitLiteral(AST_Literal context)
+        public override DPExpression VisitLiteral(AST_Literal context)
         {
             switch (context.Value.Type)
             {
                 case TokenType.Number:
-                    return Expression.Constant(float.Parse(context.Value.Lexeme, CultureInfo.InvariantCulture));
+                    return DPExpression.Constant(float.Parse(context.Value.Lexeme, CultureInfo.InvariantCulture));
                 case TokenType.Boolean:
-                    return Expression.Constant(bool.Parse(context.Value.Lexeme));
+                    return DPExpression.Constant(bool.Parse(context.Value.Lexeme));
                 case TokenType.Variable:
                     var varName = GetVariableName(context.Value);
                     _table.AddVariableUsage(varName, new SymbolPosition
@@ -339,7 +339,7 @@ namespace DialoguePlus.Core
                         Line = context.Value.Line,
                         Column = context.Value.Column,
                     });
-                    return Expression.Variable(varName);
+                    return DPExpression.Variable(varName);
                 default:
                     throw new NotImplementedException($"Unknown literal type: {context.Value.Type}");
             }
@@ -350,7 +350,7 @@ namespace DialoguePlus.Core
             return variableToken.Lexeme[1..]; // Remove the leading $
         }
 
-        public override Expression VisitFString(AST_FString context)
+        public override DPExpression VisitFString(AST_FString context)
         {
             int embedCount = 0;
             List<string> fragments = [.. context.Fragments.Select(f =>
@@ -380,21 +380,21 @@ namespace DialoguePlus.Core
                 }
                 throw new NotImplementedException($"Unknown fstring fragment type: {f.Type}");
             })];
-            List<Expression> embed = [.. context.Embeds.Select(Visit)];
+            List<DPExpression> embed = [.. context.Embeds.Select(Visit)];
             if (embed.Count != embedCount)
             {
                 throw new Exception("FString embed count mismatch.");
             }
-            return Expression.FString(fragments, embed);
+            return DPExpression.FString(fragments, embed);
         }
 
-        public override Expression VisitEmbedCall(AST_EmbedCall context)
+        public override DPExpression VisitEmbedCall(AST_EmbedCall context)
         {
             var call = context.Call;
-            return Expression.Call(call.FunctionName.Lexeme, [.. call.Arguments.Select(Visit)]);
+            return DPExpression.Call(call.FunctionName.Lexeme, [.. call.Arguments.Select(Visit)]);
         }
 
-        public override Expression VisitEmbedExpr(AST_EmbedExpr context)
+        public override DPExpression VisitEmbedExpr(AST_EmbedExpr context)
         {
             return Visit(context.Expression);
         }
