@@ -2,13 +2,14 @@
 # -----------------------------
 # OS-specific temporary files
 # -----------------------------
-.DS_Store
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 *~
 .*.swp
 .*.swo
+/DialoguePlusSample_Unity/Assets
+/DialoguePlusSample_Unity/Library
 
 # -----------------------------
 # IDE / Editor

@@ -1,0 +1,14 @@
+
+{
+  "name": "com.dialogueplus.core",
+  "version": "1.0.0",
+  "displayName": "DialoguePlus",
+  "description": "Unity adapter for DialoguePlus Core",
+  "documentationUrl": "",
+  "changelogUrl": "",
+  "keywords": ["dialogue", "narrative"],
+  "author": {
+    "name": "majulizi"
+  },
+  "hideInEditor": false
+}
