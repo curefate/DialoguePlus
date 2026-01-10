@@ -1,0 +1,15 @@
+
+{
+  "name": "DialoguePlus.Adapter",
+  "rootNamespace": "DialoguePlus.Adapter",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": [
+    "DialoguePlus.Core.dll"
+  ],
+  "autoReferenced": true,
+  "defineConstraints": []
+}
