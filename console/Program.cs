@@ -2,7 +2,7 @@
 
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var executer = new Executer();
         var compiler = new Compiler();

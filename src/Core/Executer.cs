@@ -1,3 +1,6 @@
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace DialoguePlus.Core
 {
     public class Executer
@@ -18,6 +21,32 @@ namespace DialoguePlus.Core
             _execQueue.Clear();
 
             Enqueue(_currentSet.Labels[_currentSet.EntranceLabel].Statements);
+        }
+
+        /// <summary>
+        /// Automatically steps
+        /// mode 0 = step to end, mode 1 = step to next dialogue/menu
+        /// </summary>
+        public async Task AutoStepAsync(int mode = 0, CancellationToken ct = default)
+        {
+            switch (mode)
+            {
+                case 0:
+                    while (await StepAsync(ct).ConfigureAwait(false)) ;
+                    break;
+                case 1:
+                    while (HasNext)
+                    {
+                        if (Peek() is SIR_Dialogue || Peek() is SIR_Menu)
+                        {
+                            break;
+                        }
+                        await StepAsync(ct).ConfigureAwait(false);
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(mode), "Invalid auto step mode. mode 0 = step to end, mode 1 = step to next dialogue/menu");
+            }
         }
 
         /// <summary>

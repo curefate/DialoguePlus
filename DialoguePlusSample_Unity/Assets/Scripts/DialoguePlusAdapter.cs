@@ -5,6 +5,8 @@ using System.Reflection;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
+using Unity.VisualScripting;
 
 public class DialoguePlusAdapter : MonoBehaviour
 {
@@ -15,17 +17,9 @@ public class DialoguePlusAdapter : MonoBehaviour
     private Compiler _compiler = new();
     public Runtime Runtime => _executer.Runtime;
 
-    public Action<Runtime, SIR_Dialogue> OnDialogue
-    {
-        get => _executer.OnDialogue;
-        set => _executer.OnDialogue = value;
-    }
+    public Func<Runtime, SIR_Dialogue, Task>? OnDialogue = null;
 
-    public Func<Runtime, SIR_Menu, int> OnMenu
-    {
-        get => _executer.OnMenu;
-        set => _executer.OnMenu = value;
-    }
+    public Func<Runtime, SIR_Menu, Task<int>>? OnMenu = null;
 
     void Awake()
     {
@@ -37,9 +31,12 @@ public class DialoguePlusAdapter : MonoBehaviour
         }
         _instance = this;
         DontDestroyOnLoad(this.gameObject);
+
+        _executer.OnDialogueAsync = OnDialogue ?? throw new InvalidOperationException("OnDialogue handler is not set.");
+        _executer.OnMenuAsync = OnMenu ?? throw new InvalidOperationException("OnMenu handler is not set.");
     }
 
-    public void ExecuteScript(string path)
+    public async Task ExecuteToEnd(string path)
     {
         var result = _compiler.Compile(path);
         foreach (var diag in result.Diagnostics)
@@ -60,7 +57,8 @@ public class DialoguePlusAdapter : MonoBehaviour
         if (result.Success)
         {
             this.Runtime.Variables.Clear();
-            _executer.Execute(result.Labels);
+            _executer.Prepare(result.Labels);
+            while (_executer.HasNext) await _executer.StepAsync();
         }
     }
 }
