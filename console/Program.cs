@@ -17,7 +17,11 @@ public class Program
 
         if (result.Success)
         {
-            executer.Execute(result.Labels);
+            executer.Prepare(result.Labels);
+            while(executer.HasNext)
+            {
+                await executer.StepAsync();
+            }
         }
         else
         {

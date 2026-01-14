@@ -4,7 +4,6 @@ namespace DialoguePlus.Core
     {
         private readonly LinkedList<SIR> _execQueue = new();
         private LabelSet? _currentSet = null;
-
         private readonly Runtime _runtime;
         public Runtime Runtime => _runtime;
 
@@ -13,40 +12,34 @@ namespace DialoguePlus.Core
             _runtime = runtime ?? new Runtime();
         }
 
-        public virtual void Execute(LabelSet set, string? entranceLabel = null)
+        public void Prepare(LabelSet set)
         {
-            _currentSet = set;
+            _currentSet = set ?? throw new ArgumentNullException(nameof(set));
             _execQueue.Clear();
 
-            if (entranceLabel != null)
-            {
-                if (!_currentSet.Labels.TryGetValue(entranceLabel, out SIR_Label? entrance))
-                {
-                    throw new KeyNotFoundException($"(Runtime Error) Entrance label '{entranceLabel}' not found in SIR set.");
-                }
-                Enqueue(entrance.Statements);
-            }
-            else
-            {
-                Enqueue(_currentSet.Labels[_currentSet.EntranceLabel].Statements);
-            }
-
-            while (_execQueue.Count > 0)
-            {
-                var instruction = Dequeue();
-                Execute(instruction);
-            }
+            Enqueue(_currentSet.Labels[_currentSet.EntranceLabel].Statements);
         }
 
-        private void Execute(SIR instruction)
+        /// <summary>
+        /// Execute the next instruction in the queue.
+        /// Returns true if there are more instructions in the queue; false if empty.
+        /// </summary>
+        public async Task<bool> StepAsync(CancellationToken ct = default)
         {
+            if (!HasNext) return false;
+
+            var instruction = Dequeue();
+            ct.ThrowIfCancellationRequested();
+
             switch (instruction)
             {
                 case SIR_Dialogue dialogue:
-                    OnDialogue?.Invoke(_runtime, dialogue);
+                    var dlgTask = OnDialogueAsync?.Invoke(_runtime, dialogue) ?? Task.CompletedTask;
+                    await dlgTask.ConfigureAwait(false);
                     break;
                 case SIR_Menu menu:
-                    int choice = OnMenu?.Invoke(_runtime, menu) ?? -1;
+                    var menuTask = OnMenuAsync?.Invoke(_runtime, menu);
+                    int choice = menuTask != null ? await menuTask.ConfigureAwait(false) : -1;
                     PostOnMenu(menu, choice);
                     break;
                 case SIR_Jump jump:
@@ -68,31 +61,51 @@ namespace DialoguePlus.Core
                     _runtime.Variables.PopTempScope();
                     break;
                 default:
-                    throw new NotSupportedException($"(Runtime Error) Unsupported instruction type");
+                    throw new NotSupportedException("(Runtime Error) Unsupported instruction type");
             }
+
+            return HasNext;
         }
 
-        public Action<Runtime, SIR_Dialogue> OnDialogue = (runtime, statement) =>
-        {
-            Console.WriteLine($"(Dialogue) {statement.Speaker}: {statement.Text.Evaluate(runtime)}");
-        };
+        /// <summary>
+        /// Asynchronous callback for dialogue statements.
+        /// </summary>
+        public Func<Runtime, SIR_Dialogue, Task> OnDialogueAsync { get; set; } =
+            (runtime, statement) =>
+            {
+                // Default implementation
+                Console.WriteLine($"(Dialogue) {statement.Speaker}: {statement.Text.Evaluate(runtime)}");
+                return Task.CompletedTask;
+            };
 
-        public Func<Runtime, SIR_Menu, int> OnMenu = (runtime, statement) =>
-        {
-            Console.WriteLine("(Menu) Options:");
-            for (int i = 0; i < statement.Options.Count; i++)
+        /// <summary>
+        /// Asynchronous callback for menu statements.
+        /// </summary>
+        public Func<Runtime, SIR_Menu, Task<int>> OnMenuAsync { get; set; } =
+            async (runtime, statement) =>
             {
-                Console.WriteLine($"  {i + 1}. {statement.Options[i].Evaluate(runtime)}");
-            }
-            var input = Console.ReadLine();
-            int choice;
-            while (!int.TryParse(input, out choice) || choice < 1 || choice > statement.Options.Count)
-            {
-                Console.WriteLine("Invalid choice. Please enter a valid option number.");
-                input = Console.ReadLine();
-            }
-            return choice - 1;
-        };
+                // Default implementation
+                Console.WriteLine("(Menu) Options:");
+                for (int i = 0; i < statement.Options.Count; i++)
+                {
+                    Console.WriteLine($" {i + 1}. {statement.Options[i].Evaluate(runtime)}");
+                }
+
+                int choice = -1;
+                while (true)
+                {
+                    Console.Write("Enter choice #: ");
+                    var input = Console.ReadLine();
+                    if (int.TryParse(input, out choice) &&
+                        choice >= 1 && choice <= statement.Options.Count)
+                    {
+                        break;
+                    }
+                    Console.WriteLine("Invalid choice. Please enter a valid option number.");
+                    await Task.Yield();
+                }
+                return choice - 1;
+            };
 
         private void PostOnMenu(SIR_Menu statement, int choice)
         {
@@ -101,12 +114,14 @@ namespace DialoguePlus.Core
                 throw new ArgumentOutOfRangeException(nameof(choice), "Choice index is out of range.");
             }
             var selectedBlock = statement.Blocks[choice];
-            Enqueue(selectedBlock, true);
+            Enqueue(selectedBlock, toFront: true);
         }
 
         private void ExecuteJump(SIR_Jump statement)
         {
-            var target = _currentSet?.Labels[statement.TargetLabel] ?? throw new KeyNotFoundException($"(Runtime Error) Label '{statement.TargetLabel}' not found.[Ln {statement.Line}]");
+            var target = _currentSet?.Labels[statement.TargetLabel]
+                ?? throw new KeyNotFoundException($"(Runtime Error) Label '{statement.TargetLabel}' not found.[Ln {statement.Line}]");
+
             _execQueue.Clear();
             _runtime.Variables.PopTempScope();
             Enqueue(target.Statements);
@@ -114,10 +129,12 @@ namespace DialoguePlus.Core
 
         private void ExecuteTour(SIR_Tour statement)
         {
-            var target = _currentSet?.Labels[statement.TargetLabel] ?? throw new KeyNotFoundException($"(Runtime Error) Label '{statement.TargetLabel}' not found.[Ln {statement.Line}]");
+            var target = _currentSet?.Labels[statement.TargetLabel]
+                ?? throw new KeyNotFoundException($"(Runtime Error) Label '{statement.TargetLabel}' not found.[Ln {statement.Line}]");
+
             _runtime.Variables.NewTempScope();
             _execQueue.AddFirst(Internal_SIR_Pop.Instance);
-            Enqueue(target.Statements, true);
+            Enqueue(target.Statements, toFront: true);
         }
 
         private void ExecuteCall(SIR_Call statement)
@@ -156,15 +173,16 @@ namespace DialoguePlus.Core
                 var conditionResult = statement.Condition.Evaluate(_runtime);
                 if (conditionResult == null || conditionResult is not bool)
                 {
-                    throw new InvalidOperationException($"(Runtime Error) Condition must evaluate to a boolean value.");
+                    throw new InvalidOperationException("(Runtime Error) Condition must evaluate to a boolean value.");
                 }
+
                 if ((bool)conditionResult)
                 {
-                    Enqueue(statement.ThenBlock, true);
+                    Enqueue(statement.ThenBlock, toFront: true);
                 }
                 else
                 {
-                    Enqueue(statement.ElseBlock, true);
+                    Enqueue(statement.ElseBlock, toFront: true);
                 }
             }
             catch (Exception ex)
@@ -175,10 +193,8 @@ namespace DialoguePlus.Core
 
         private void Enqueue(List<SIR> instructions, bool toFront = false)
         {
-            if (instructions == null || instructions.Count == 0)
-            {
-                return;
-            }
+            if (instructions == null || instructions.Count == 0) return;
+
             if (toFront)
             {
                 for (int i = instructions.Count - 1; i >= 0; i--)
@@ -201,9 +217,13 @@ namespace DialoguePlus.Core
             {
                 throw new InvalidOperationException("Execution queue is empty.");
             }
-            var instruction = _execQueue.First?.Value ?? throw new InvalidOperationException("Execution queue contains a null instruction.");
+            var instruction = _execQueue.First?.Value
+                ?? throw new InvalidOperationException("Execution queue contains a null instruction.");
             _execQueue.RemoveFirst();
             return instruction;
         }
+
+        public bool HasNext => _execQueue.Count > 0;
+        public SIR? Peek() => _execQueue.First?.Value;
     }
 }
