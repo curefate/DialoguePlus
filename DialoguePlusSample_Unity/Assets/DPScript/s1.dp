@@ -1,0 +1,14 @@
+
+#call ShowUI()
+jump start
+
+label start:
+    Miku "Welcome to the D+ tutorial! My name is Miku."
+    Miku "In this scene, we will learn about the basic usage of D+."
+    Miku "We're in label \"start\", You can use jump statements to navigate between labels. Like this:\n\"jump t_dialogue\""
+    jump t_dialogue
+
+label t_dialogue:
+    "Here's a dialogue example."
+    Miku "This is my friend Teto."
+    Teto "I'm Teto."

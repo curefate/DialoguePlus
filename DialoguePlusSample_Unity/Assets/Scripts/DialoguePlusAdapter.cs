@@ -15,11 +15,14 @@ public class DialoguePlusAdapter : MonoBehaviour
 
     private Executer _executer = new();
     private Compiler _compiler = new();
+
+    public Executer Executer => _executer;
     public Runtime Runtime => _executer.Runtime;
 
     public Func<Runtime, SIR_Dialogue, Task>? OnDialogue = null;
-
     public Func<Runtime, SIR_Menu, Task<int>>? OnMenu = null;
+
+    private bool _isChecked = false;
 
     void Awake()
     {
@@ -31,9 +34,22 @@ public class DialoguePlusAdapter : MonoBehaviour
         }
         _instance = this;
         DontDestroyOnLoad(this.gameObject);
+    }
 
-        _executer.OnDialogueAsync = OnDialogue ?? throw new InvalidOperationException("OnDialogue handler is not set.");
-        _executer.OnMenuAsync = OnMenu ?? throw new InvalidOperationException("OnMenu handler is not set.");
+    void Update()
+    {
+        if (!_isChecked)
+        {
+            _isChecked = true;
+            if (OnDialogue == null)
+            {
+                Debug.LogWarning("[D+] OnDialogue handler is not assigned. Dialogue events will be ignored.");
+            }
+            if (OnMenu == null)
+            {
+                Debug.LogWarning("[D+] OnMenu handler is not assigned. Menu events will be ignored.");
+            }
+        }
     }
 
     public async Task ExecuteToEnd(string path)
@@ -58,7 +74,7 @@ public class DialoguePlusAdapter : MonoBehaviour
         {
             this.Runtime.Variables.Clear();
             _executer.Prepare(result.Labels);
-            while (_executer.HasNext) await _executer.StepAsync();
+            await _executer.AutoStepAsync(0);
         }
     }
 }

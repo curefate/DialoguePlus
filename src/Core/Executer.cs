@@ -25,7 +25,7 @@ namespace DialoguePlus.Core
 
         /// <summary>
         /// Automatically steps
-        /// mode 0 = step to end, mode 1 = step to next dialogue/menu
+        /// mode 0 = step to end, mode 1 = step to next dialogue/menu/call
         /// </summary>
         public async Task AutoStepAsync(int mode = 0, CancellationToken ct = default)
         {
@@ -37,7 +37,7 @@ namespace DialoguePlus.Core
                 case 1:
                     while (HasNext)
                     {
-                        if (Peek() is SIR_Dialogue || Peek() is SIR_Menu)
+                        if (Peek() is SIR_Dialogue || Peek() is SIR_Menu || Peek() is SIR_Call)
                         {
                             break;
                         }
