@@ -8,7 +8,7 @@ public class Program
         var path2 = "DialoguePlusSample_Unity/Assets/DPScript/s1.dp";
         var executer = new Executer();
         var compiler = new Compiler();
-        var result = compiler.Compile(path2);
+        var result = compiler.Compile(path1);
 
         Console.ForegroundColor = ConsoleColor.Red;
         foreach (var diag in result.Diagnostics)

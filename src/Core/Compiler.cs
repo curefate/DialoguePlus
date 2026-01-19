@@ -62,7 +62,7 @@ namespace DialoguePlus.Core
 
         private async Task<string> GetSourceTextAsync(string uri, CancellationToken cancellationToken = default)
         {
-            var context = await _resolver.GetTextAsync(uri, cancellationToken);
+            var context = await _resolver.GetTextAsync(uri, cancellationToken).ConfigureAwait(false);
             return context.Text;
         }
 
@@ -105,8 +105,8 @@ namespace DialoguePlus.Core
                 var importUri = IsAbsolutePath(import.Path.Lexeme) ? new Uri(import.Path.Lexeme).AbsoluteUri : new Uri(new Uri(uri), import.Path.Lexeme).AbsoluteUri;
                 try
                 {
-                    var importCode = await GetSourceTextAsync(importUri, cancellationToken);
-                    await CompileInternalAsync(importUri, importCode, cancellationToken, import.Path.Line, import.Path.Column);
+                    var importCode = await GetSourceTextAsync(importUri, cancellationToken).ConfigureAwait(false);
+                    await CompileInternalAsync(importUri, importCode, cancellationToken, import.Path.Line, import.Path.Column).ConfigureAwait(false);
                     table.AddReference(importUri, new SymbolPosition
                     {
                         SourceID = uri,
@@ -204,8 +204,8 @@ namespace DialoguePlus.Core
         {
             try
             {
-                var code = await GetSourceTextAsync(SourceID, cancellationToken);
-                await CompileInternalAsync(SourceID, code, cancellationToken);
+                var code = await GetSourceTextAsync(SourceID, cancellationToken).ConfigureAwait(false);
+                await CompileInternalAsync(SourceID, code, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

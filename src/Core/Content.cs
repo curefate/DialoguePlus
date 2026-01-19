@@ -26,7 +26,7 @@ namespace DialoguePlus.Core
                 throw new FileNotFoundException($"File not found: {uri.LocalPath}");
             using var fs = File.OpenRead(uri.LocalPath);
             using var sr = new StreamReader(fs, detectEncodingFromByteOrderMarks: true);
-            var text = await sr.ReadToEndAsync();
+            var text = await sr.ReadToEndAsync().ConfigureAwait(false);
             var info = new FileInfo(uri.LocalPath);
             return new SourceContent(
                 text
@@ -88,13 +88,13 @@ namespace DialoguePlus.Core
         public async Task<bool> ExistsAsync(string sourceId, CancellationToken ct = default)
         {
             var uri = Normalize(sourceId);
-            return await GetProvider(uri).ExistsAsync(uri, ct);
+            return await GetProvider(uri).ExistsAsync(uri, ct).ConfigureAwait(false);
         }
 
         public async Task<SourceContent> GetTextAsync(string sourceId, CancellationToken ct = default)
         {
             var uri = Normalize(sourceId);
-            return await GetProvider(uri).OpenTextAsync(uri, ct);
+            return await GetProvider(uri).OpenTextAsync(uri, ct).ConfigureAwait(false);
         }
 
         private static Uri Normalize(string idOrPath)
