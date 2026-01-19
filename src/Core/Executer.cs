@@ -32,7 +32,7 @@ namespace DialoguePlus.Core
             switch (mode)
             {
                 case 0:
-                    while (await StepAsync(ct).ConfigureAwait(false)) ;
+                    while (await StepAsync(ct)) ;
                     break;
                 case 1:
                     while (HasNext)
@@ -41,7 +41,7 @@ namespace DialoguePlus.Core
                         {
                             break;
                         }
-                        await StepAsync(ct).ConfigureAwait(false);
+                        await StepAsync(ct);
                     }
                     break;
                 default:
@@ -64,11 +64,11 @@ namespace DialoguePlus.Core
             {
                 case SIR_Dialogue dialogue:
                     var dlgTask = OnDialogueAsync?.Invoke(_runtime, dialogue) ?? Task.CompletedTask;
-                    await dlgTask.ConfigureAwait(false);
+                    await dlgTask;
                     break;
                 case SIR_Menu menu:
                     var menuTask = OnMenuAsync?.Invoke(_runtime, menu);
-                    int choice = menuTask != null ? await menuTask.ConfigureAwait(false) : -1;
+                    int choice = menuTask != null ? await menuTask : -1;
                     PostOnMenu(menu, choice);
                     break;
                 case SIR_Jump jump:

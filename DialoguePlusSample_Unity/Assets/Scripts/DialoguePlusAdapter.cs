@@ -54,7 +54,9 @@ public class DialoguePlusAdapter : MonoBehaviour
 
     public async Task ExecuteToEnd(string path)
     {
+        Debug.Log($"[D+] Compiling and executing script: {path}");
         var result = _compiler.Compile(path);
+        Debug.Log($"[D+] Script compiled successfully: {path}");
         foreach (var diag in result.Diagnostics)
         {
             if (diag.Severity == Diagnostic.SeverityLevel.Error)
@@ -74,6 +76,7 @@ public class DialoguePlusAdapter : MonoBehaviour
         {
             this.Runtime.Variables.Clear();
             _executer.Prepare(result.Labels);
+            Debug.Log($"[D+] Script execution start, include labels: {string.Join(", ", result.Labels.Labels.Keys)}");
             await _executer.AutoStepAsync(0);
         }
     }
@@ -100,7 +103,7 @@ public static class FunctionRegistrar
         typeof(string), typeof(bool), typeof(int), typeof(float)
     };
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    //[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void RegisterAll()
     {
         EnsureAdapterExists(); // 确保 Runtime 可用

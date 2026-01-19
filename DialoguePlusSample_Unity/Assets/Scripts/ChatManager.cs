@@ -52,10 +52,11 @@ public class ChatManager : MonoBehaviour
 
         for (int i = 0; i < options.Count; i++)
         {
-            var button = inventory.AddOption(options[i]);
+            int index = i;
+            var button = inventory.AddOption(options[index]);
             button.onClick.AddListener(() =>
             {
-                tcs.TrySetResult(i);
+                tcs.TrySetResult(index);
                 inventory.ClearOptions();
             });
         }
@@ -63,18 +64,20 @@ public class ChatManager : MonoBehaviour
         return await tcs.Task;
     }
 
-    private Func<Runtime, SIR_Dialogue, Task> onDialogueEvent => async (runtime, dialogue) =>
+    private async Task HandleDialogue(Runtime runtime, SIR_Dialogue dialogue)
     {
+        Debug.Log($"[D+] Handling dialogue: {dialogue.Text}");
         await PushText((string)dialogue.Text.Evaluate(runtime), dialogue.Speaker);
         await WaitForClick();
-    };
+    }
 
-    private Func<Runtime, SIR_Menu, Task<int>> onMenuEvent => async (runtime, menu) =>
+    private async Task<int> HandleMenu(Runtime runtime, SIR_Menu menu)
     {
+        Debug.Log($"[D+] Handling menu: {menu.Options}");
         var options = menu.Options.Select(option => (string)option.Evaluate(runtime)).ToList();
         int selectedIndex = await CreateOptions(options);
         return selectedIndex;
-    };
+    }
 
     private void ShowUI()
     {
@@ -92,11 +95,11 @@ public class ChatManager : MonoBehaviour
 
     async void Start()
     {
-        HideUI();
-        DialoguePlusAdapter.Instance.OnDialogue = onDialogueEvent;
-        DialoguePlusAdapter.Instance.OnMenu = onMenuEvent;
+        //HideUI();
+        DialoguePlusAdapter.Instance.OnDialogue = HandleDialogue;
+        DialoguePlusAdapter.Instance.OnMenu = HandleMenu;
         DialoguePlusAdapter.Instance.Runtime.Functions.AddFunction(HideUI);
         DialoguePlusAdapter.Instance.Runtime.Functions.AddFunction(ShowUI);
-        await DialoguePlusAdapter.Instance.ExecuteToEnd("Assets/DPScript/s1.dp");
+        Debug.Log("ChatManager initialized");
     }
 }

@@ -25,10 +25,9 @@ namespace DialoguePlus.Core
         {
             var sourceID = _IfPath(pathOrUri) ? _PathToUri(pathOrUri) : pathOrUri;
             var session = new CompilationSession(sourceID, _resolver);
-            var task = session.CompileAsync();
-            task.Wait();
+            var result = session.CompileAsync().GetAwaiter().GetResult();
             _symbolTableManager.Merge(session.SymbolTables);
-            return task.Result;
+            return result;
         }
     }
 
