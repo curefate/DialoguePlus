@@ -19,11 +19,6 @@ public class DialoguePlusAdapter : MonoBehaviour
     public Executer Executer => _executer;
     public Runtime Runtime => _executer.Runtime;
 
-    public Func<Runtime, SIR_Dialogue, Task>? OnDialogue = null;
-    public Func<Runtime, SIR_Menu, Task<int>>? OnMenu = null;
-
-    private bool _isChecked = false;
-
     void Awake()
     {
         if (_instance != null && _instance != this)
@@ -34,22 +29,6 @@ public class DialoguePlusAdapter : MonoBehaviour
         }
         _instance = this;
         DontDestroyOnLoad(this.gameObject);
-    }
-
-    void Update()
-    {
-        if (!_isChecked)
-        {
-            _isChecked = true;
-            if (OnDialogue == null)
-            {
-                Debug.LogWarning("[D+] OnDialogue handler is not assigned. Dialogue events will be ignored.");
-            }
-            if (OnMenu == null)
-            {
-                Debug.LogWarning("[D+] OnMenu handler is not assigned. Menu events will be ignored.");
-            }
-        }
     }
 
     public async Task ExecuteToEnd(string path)

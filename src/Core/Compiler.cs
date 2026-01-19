@@ -4,7 +4,7 @@ namespace DialoguePlus.Core
 {
     public class Compiler
     {
-        public static string Version => "1.0.1";
+        public static string Version => "1.0.2";
         private readonly IContentResolver _resolver;
 
         private readonly SymbolTableManager _symbolTableManager = new();

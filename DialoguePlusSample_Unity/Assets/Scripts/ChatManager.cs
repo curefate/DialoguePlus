@@ -10,7 +10,7 @@ using System.Linq;
 
 public class ChatManager : MonoBehaviour
 {
-    public int typingDelay = 50;
+    public int typingDelay;
 
     public Image chatBackground;
     public TextMeshProUGUI chatText;
@@ -32,16 +32,22 @@ public class ChatManager : MonoBehaviour
         {
             ct.ThrowIfCancellationRequested();
             chatText.text += c;
-            await Task.Delay(typingDelay, ct);
+            await Task.Delay(Mathf.RoundToInt(typingDelay * Time.deltaTime), ct);
         }
         isTyping = false;
     }
 
+    private bool _isClicked = false;
     private async Task WaitForClick(CancellationToken ct = default)
     {
-        while (!Input.GetMouseButtonDown(0) && !Input.GetKeyDown(KeyCode.Space))
+        _isClicked = false;
+        while (!_isClicked)
         {
-            await Task.Delay(100, ct);
+            if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
+            {
+                _isClicked = true;
+            }
+            await Task.Yield();
         }
     }
 
@@ -93,11 +99,11 @@ public class ChatManager : MonoBehaviour
         chatText.gameObject.SetActive(false);
     }
 
-    async void Start()
+    void Start()
     {
-        //HideUI();
-        DialoguePlusAdapter.Instance.OnDialogue = HandleDialogue;
-        DialoguePlusAdapter.Instance.OnMenu = HandleMenu;
+        HideUI();
+        DialoguePlusAdapter.Instance.Executer.OnDialogueAsync = HandleDialogue;
+        DialoguePlusAdapter.Instance.Executer.OnMenuAsync = HandleMenu;
         DialoguePlusAdapter.Instance.Runtime.Functions.AddFunction(HideUI);
         DialoguePlusAdapter.Instance.Runtime.Functions.AddFunction(ShowUI);
         Debug.Log("ChatManager initialized");

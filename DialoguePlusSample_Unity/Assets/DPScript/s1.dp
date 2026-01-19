@@ -1,5 +1,5 @@
 
-#call ShowUI()
+call ShowUI()
 jump start
 
 label start:
@@ -12,3 +12,7 @@ label t_dialogue:
     "Here's a dialogue example."
     Miku "This is my friend Teto."
     Teto "I'm Teto."
+    "Op1":
+        "This is option 1."
+    "Op2":
+        "This is option 2."
