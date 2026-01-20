@@ -409,7 +409,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -200, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &828744490
@@ -464,10 +464,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   typingDelay: 3000
+  autoSkip: 0
   chatBackground: {fileID: 1564195146}
   chatText: {fileID: 1759045816}
   talkerText: {fileID: 1326689463}
   inventory: {fileID: 1920889612}
+  talkerPrefab: {fileID: 7277821063291089758, guid: 17e6cc58e598f0e419ad6eacedf80354, type: 3}
+  imageDictionary: {fileID: 11400000, guid: 319f591f4704a8c488e9a174ed4eeb58, type: 2}
+  left: {fileID: 596367432}
+  right: {fileID: 912400833}
+  mid: {fileID: 977396480}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -549,7 +555,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 200, y: 0}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &941375197
@@ -1349,7 +1355,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   optionPrefab: {fileID: 6785829856814718842, guid: 638c9fd6f9046584e8e84ff98b355b1d, type: 3}
-  spacing: 10
+  spacing: 100
   lerpSpeed: 5
 --- !u!1 &2138760131
 GameObject:

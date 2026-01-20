@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66658212611ee224bb7c9f0218cabc65, type: 3}
+  m_Name: ImageDictionary
+  m_EditorClassIdentifier: 
+  entries:
+  - key: Miku
+    texture: {fileID: 2800000, guid: abf705286f9b8364bac30c787a774cbd, type: 3}
+  - key: Teto
+    texture: {fileID: 2800000, guid: 7dd57430451bf2341a810fb6a4af1493, type: 3}

@@ -82,7 +82,7 @@ public static class FunctionRegistrar
         typeof(string), typeof(bool), typeof(int), typeof(float)
     };
 
-    //[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void RegisterAll()
     {
         EnsureAdapterExists(); // 确保 Runtime 可用

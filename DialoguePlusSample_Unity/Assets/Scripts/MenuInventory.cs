@@ -5,8 +5,8 @@ using UnityEngine.UI;
 public class MenuInventory : MonoBehaviour
 {
     public GameObject optionPrefab;
-    public float spacing = 10f;
-    public float lerpSpeed = 5f;
+    public float spacing;
+    public float lerpSpeed;
 
     public void ClearOptions()
     {
