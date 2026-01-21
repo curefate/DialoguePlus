@@ -1,0 +1,35 @@
+import s2.dp
+call ShowUI()
+jump start
+
+label start:
+    Miku "Hi!"
+    call ShowTalker("Miku", "mid")
+    Miku "Welcome to the D+ tutorial! My name is Miku."
+    Miku "In this scene, we will learn about the basic usage of D+."
+    Miku "We're in label \"start\", You can use jump statements to navigate between labels. Like this:\n\"jump part1\""
+    jump part1
+
+label part1:
+    Miku "Maybe you feel nothing, but we jump to another label."
+    Miku "This is my friend Teto. She's gonna teach you how to create options."
+    call MoveTalker("Miku", "right")
+    call ShowTalker("Teto", "left")
+    Teto "I'm Teto."
+    Teto "To create options, you can use the menu statement, just add \":\" to the end of a dialogue statement, and add an indent to before the sub block."
+    Teto "Let me show you an example. Do you like me?"
+    "Yes!":
+        Teto "I like you too."
+    "No!":
+        Teto "I don't care."
+    Miku "Are you understand?"
+    "Yes! I totally understand!":
+        Miku "Great!"
+    "No, I don't understand.":
+        Miku "Do you wanna try this section again?"
+        "Yes":
+            jump part1
+        "No":
+            Miku "Okay, you can get more information from the documentation."
+    Miku "Thank you Teto! Let's move on."
+    jump part2

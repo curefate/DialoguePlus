@@ -14,7 +14,7 @@
   
   
   <PropertyGroup>
-    <UnityOutputDir Condition="'$(UnityOutputDir)'==''">..\adapters\Unity\Assets\Plugins\</UnityOutputDir>
+    <UnityOutputDir Condition="'$(UnityOutputDir)'==''">..\adapters\Unity\Runtime\Plugins\</UnityOutputDir>
   </PropertyGroup>
 
 

@@ -1,3 +1,6 @@
+// Licensed under the MIT License.
+// See LICENSE file in the project root.
+
 using System.Text;
 
 namespace DialoguePlus.Core

@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.dialogueplus.core": {
-      "version": "file:../../adapters/Unity",
+      "version": "file:C:/Users/curef/Desktop/DialoguePlus/adapters/Unity",
       "depth": 0,
       "source": "local",
       "dependencies": {}

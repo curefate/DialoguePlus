@@ -1,0 +1,14 @@
+label part2:
+    Teto "In this section, you will learn another important concept: call functions."
+    Miku "You can call functions which defined in your GameEngine, just use \"Runtime.Functions.AddFunction()\" to register it."
+    Miku "Or through attributes like [DPFunction], depends on your GameEngine."
+    Miku "Then you can use \"call FuncName(parameters...)\" to invoke the function. Like this:"
+    call MoveTalker("Miku", "mid")
+    call Rotate("Teto", 0, 0, 180)
+    Teto "I'm dizzy."
+    Miku "Sorry Teto. You can go back and have a rest.{call HideTalker("Teto")}"
+    Miku "By the way, call statements can be embedded in the dialogue, use brackets to wrap the call statement."
+    Miku "You can use it to control everything, like add sound effects or change the background."
+    Miku "That's all for the basic tutorial. You can explore more features in the documentation. Thank you for your attention!"
+    call HideTalker("Miku")
+    call HideUI()
