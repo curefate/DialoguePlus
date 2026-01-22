@@ -10,7 +10,7 @@ D+ is engine-agnostic at its core, allow host systems to override execution beha
 
 ## Navigation
 
-- [**D+ Grammar Reference**](docs/Grammar.md)  
+- [**D+ Syntax Reference**](docs/Syntax.md)  
 
 - [**Unity Adapter Documentation**](docs/UnityAdapter.md)
 
@@ -26,7 +26,7 @@ D+ is engine-agnostic at its core, allow host systems to override execution beha
 
 ## Features
 
-- **Python-like grammar:**  
+- **Python-like syntax:**  
   Clean, easy, zero ambiguity.
 - **Customizable:**  
   Execution behaviour can be overriden by host system, suitable for most game genres.
