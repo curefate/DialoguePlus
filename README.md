@@ -26,20 +26,18 @@ D+ is engine-agnostic at its core, allow host systems to override execution beha
 
 ## Features
 
-- **Python-like grammar:** Clean, easy, unambiguous.
-- **Customizable:** Execution behaviour can be overriden by host system, suitable for most game genres.
-- **Modular and Extensible:** Core library is engine-agnostic.
+- **Python-like grammar:**  
+  Clean, easy, zero ambiguity.
+- **Customizable:**  
+  Execution behaviour can be overriden by host system, suitable for most game genres.
+- **Modular and Extensible:**  
+  Core library is engine-agnostic.
 
 ## Repository Structure
 
-- **Core Library**  
-  The D+ compiler, runtime executor, and core data structures
+- **Core Library:** src/
 
-- **Unity Adapter**  
-  Unity-specific integration layer and example project
-
-- **VS Code Extension**  
-  Editor support for D+ scripting
+- **Unity Adapter:** adapter/Unity
 
 ## License
 
