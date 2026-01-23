@@ -22,7 +22,7 @@ Note:
 - The naming rules for labels are similar to variables; for example, they cannot start with a number.
 - Statements within the label block must be indented like line 3.
 
-In addition, you may noticed **"Top level statement"**. These statements are not indented and do not explicitly belong to any label. However, they will be automatically assigned to the label named "`@system/\_\_main\_\_`" during compilation. **This label is the default entry point when the script is executed. Therefore, every script that needs to be executed needs top level statements, usually started with a jump statement.**
+In addition, you may noticed **"Top level statement"**. These statements are not indented and do not explicitly belong to any label. However, they will be automatically assigned to the label named "`@system/__main__`" during compilation. **This label is the default entry point when the script is executed. Therefore, every script that needs to be executed needs top level statements, usually started with a jump statement.**
 
 ## Import
 
