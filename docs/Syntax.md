@@ -8,7 +8,7 @@ Labels are not mandatory, but they help to make the script structure clearer and
 
 A label can be declared like this:
 
-```dp
+```python
 jump label_a             # Top level statement
 label label_a:           # Declare label "label_a"
     "Hello World!"       # Statements under the label "label_a"
