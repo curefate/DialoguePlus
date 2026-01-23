@@ -12,9 +12,11 @@ D+ is engine-agnostic at its core, allow host systems to override execution beha
 
 - [**D+ Syntax Reference**](docs/Syntax.md)  
 
-- [**Unity Adapter Documentation**](docs/UnityAdapter.md)
+- [**API Reference**](docs/API.md)
 
 - [**Core Library Architecture**](docs/Architexture.md)
+
+- [**Unity Adapter Documentation**](docs/UnityAdapter.md)
 
 - [**VS Code Extension**](https://github.com/curefate/DialoguePlus-Extension)
 
@@ -23,6 +25,8 @@ D+ is engine-agnostic at its core, allow host systems to override execution beha
 ![show](images/show.gif)
 
 > This example is from sample scene of Unity Adapter.
+
+> PS: Yeah I can see it looks... simple, but just for now :3
 
 ## Features
 
