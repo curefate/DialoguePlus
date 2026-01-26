@@ -1,11 +1,23 @@
 namespace DialoguePlus.Core
 {
+    /// <summary>
+    /// Manages runtime state including variables and function registries for dialogue execution.
+    /// </summary>
     public class Runtime
     {
+        /// <summary>
+        /// Gets the variable registry for storing and accessing script variables.
+        /// </summary>
         public readonly VariableRegistry Variables = new();
+        /// <summary>
+        /// Gets the function registry for registering and calling C# functions from scripts.
+        /// </summary>
         public readonly FunctionRegistry Functions = new();
     }
 
+    /// <summary>
+    /// Manages variable storage with support for global and temporary (scoped) variables.
+    /// </summary>
     public class VariableRegistry
     {
         internal VariableRegistry() { }
@@ -24,6 +36,9 @@ namespace DialoguePlus.Core
             }
         }
 
+        /// <summary>
+        /// Clears all variables in both global and temporary scopes.
+        /// </summary>
         public void Clear()
         {
             _globalScope.Clear();
@@ -31,11 +46,17 @@ namespace DialoguePlus.Core
             NewTempScope();
         }
 
+        /// <summary>
+        /// Creates a new temporary variable scope. Used when entering a new context (e.g., tour to a label).
+        /// </summary>
         public void NewTempScope()
         {
             _tempScopeStack.Push(new Dictionary<string, TypedVar>());
         }
 
+        /// <summary>
+        /// Pops the current temporary variable scope, discarding all variables in it.
+        /// </summary>
         public void PopTempScope()
         {
             if (_tempScopeStack.Count > 1)
@@ -48,6 +69,14 @@ namespace DialoguePlus.Core
             }
         }
 
+        /// <summary>
+        /// Sets a variable value. Variables starting with "global." are stored in the global scope.
+        /// Supported types: string, int, float, bool.
+        /// </summary>
+        /// <param name="varName">The variable name. Use "global." prefix for global variables.</param>
+        /// <param name="value">The value to set. Must be string, int, float, bool, or TypedVar.</param>
+        /// <exception cref="ArgumentNullException">Thrown when value is null.</exception>
+        /// <exception cref="ArgumentException">Thrown when value type is not supported.</exception>
         public void Set(string varName, object value)
         {
             if (value == null)
@@ -81,6 +110,12 @@ namespace DialoguePlus.Core
             }
         }
 
+        /// <summary>
+        /// Gets the value of a variable. Variables starting with "global." are retrieved from the global scope.
+        /// </summary>
+        /// <param name="varName">The variable name to retrieve.</param>
+        /// <returns>The typed variable containing the value and type information.</returns>
+        /// <exception cref="KeyNotFoundException">Thrown when the variable is not found.</exception>
         public TypedVar Get(string varName)
         {
             var currentScope = varName.StartsWith("global.") ? _globalScope : _tempScope;
@@ -92,37 +127,91 @@ namespace DialoguePlus.Core
         }
     }
 
+    /// <summary>
+    /// Manages registration and invocation of C# functions that can be called from DialoguePlus scripts.
+    /// </summary>
     public class FunctionRegistry
     {
         internal FunctionRegistry() { }
         private readonly Dictionary<string, Delegate> _functions = [];
+        /// <summary>
+        /// Clears all registered functions.
+        /// </summary>
         public void Clear() => _functions.Clear();
+        /// <summary>
+        /// Registers a function with no parameters that returns a value.
+        /// </summary>
+        /// <typeparam name="TResult">The return type of the function.</typeparam>
+        /// <param name="func">The function to register.</param>
+        /// <param name="funcName">The name to register the function under. If empty, uses the method name.</param>
         public void AddFunction<TResult>(Func<TResult> func, string funcName = "")
             => _functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
+        /// <summary>
+        /// Registers a function with one parameter that returns a value.
+        /// </summary>
         public void AddFunction<T0, TResult>(Func<T0, TResult> func, string funcName = "")
             => _functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
+        /// <summary>
+        /// Registers a function with two parameters that returns a value.
+        /// </summary>
         public void AddFunction<T0, T1, TResult>(Func<T0, T1, TResult> func, string funcName = "")
             => _functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
+        /// <summary>
+        /// Registers a function with three parameters that returns a value.
+        /// </summary>
         public void AddFunction<T0, T1, T2, TResult>(Func<T0, T1, T2, TResult> func, string funcName = "")
             => _functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
+        /// <summary>
+        /// Registers a function with four parameters that returns a value.
+        /// </summary>
         public void AddFunction<T0, T1, T2, T3, TResult>(Func<T0, T1, T2, T3, TResult> func, string funcName = "")
             => _functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
+        /// <summary>
+        /// Registers a function with five parameters that returns a value.
+        /// </summary>
         public void AddFunction<T0, T1, T2, T3, T4, TResult>(Func<T0, T1, T2, T3, T4, TResult> func, string funcName = "")
             => _functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
+        /// <summary>
+        /// Registers an action (void function) with no parameters.
+        /// </summary>
         public void AddFunction(Action action, string funcName = "")
             => _functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
+        /// <summary>
+        /// Registers an action with one parameter.
+        /// </summary>
         public void AddFunction<T0>(Action<T0> action, string funcName = "")
             => _functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
+        /// <summary>
+        /// Registers an action with two parameters.
+        /// </summary>
         public void AddFunction<T0, T1>(Action<T0, T1> action, string funcName = "")
             => _functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
+        /// <summary>
+        /// Registers an action with three parameters.
+        /// </summary>
         public void AddFunction<T0, T1, T2>(Action<T0, T1, T2> action, string funcName = "")
             => _functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
+        /// <summary>
+        /// Registers an action with four parameters.
+        /// </summary>
         public void AddFunction<T0, T1, T2, T3>(Action<T0, T1, T2, T3> action, string funcName = "")
             => _functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
+        /// <summary>
+        /// Registers an action with five parameters.
+        /// </summary>
         public void AddFunction<T0, T1, T2, T3, T4>(Action<T0, T1, T2, T3, T4> action, string funcName = "")
             => _functions[string.IsNullOrEmpty(funcName) ? action.Method.Name : funcName] = action;
+        /// <summary>
+        /// Registers a generic delegate with a custom name.
+        /// </summary>
         public void AddFunction(Delegate func, string funcName)
             => _functions[string.IsNullOrEmpty(funcName) ? func.Method.Name : funcName] = func;
+        /// <summary>
+        /// Gets the delegate for a registered function.
+        /// </summary>
+        /// <param name="funcName">The function name.</param>
+        /// <returns>The registered delegate.</returns>
+        /// <exception cref="KeyNotFoundException">Thrown when the function is not found.</exception>
         public Delegate GetDelegate(string funcName)
         {
             if (_functions.TryGetValue(funcName, out var func))
@@ -131,6 +220,14 @@ namespace DialoguePlus.Core
             }
             throw new KeyNotFoundException($"Function '{funcName}' not found.");
         }
+        /// <summary>
+        /// Invokes a function with dynamic arguments. Returns the function result or null for void functions.
+        /// </summary>
+        /// <param name="funcName">The function name.</param>
+        /// <param name="args">The arguments to pass.</param>
+        /// <returns>The function result or null.</returns>
+        /// <exception cref="KeyNotFoundException">Thrown when the function is not found.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when function invocation fails.</exception>
         public dynamic? Invoke(string funcName, params object[] args)
         {
             if (_functions.TryGetValue(funcName, out var func))
@@ -358,9 +455,18 @@ namespace DialoguePlus.Core
         }
     }
 
+    /// <summary>
+    /// Represents a typed variable with its value and type information.
+    /// </summary>
     public class TypedVar
     {
+        /// <summary>
+        /// Gets the value of the variable.
+        /// </summary>
         public object Value { get; }
+        /// <summary>
+        /// Gets the type of the variable.
+        /// </summary>
         public Type Type { get; }
 
         internal TypedVar(object value)

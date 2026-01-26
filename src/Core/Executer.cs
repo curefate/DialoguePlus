@@ -3,18 +3,33 @@ using System.Threading.Tasks;
 
 namespace DialoguePlus.Core
 {
+    /// <summary>
+    /// Executes compiled DialoguePlus scripts by processing SIR (Structured Intermediate Representation) instructions.
+    /// </summary>
     public class Executer
     {
         private readonly LinkedList<SIR> _execQueue = new();
         private LabelSet? _currentSet = null;
         private readonly Runtime _runtime;
+        /// <summary>
+        /// Gets the runtime instance managing variables and functions for this executer.
+        /// </summary>
         public Runtime Runtime => _runtime;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Executer"/> class.
+        /// </summary>
+        /// <param name="runtime">The runtime instance to use. If null, a new runtime will be created.</param>
         public Executer(Runtime? runtime = null)
         {
             _runtime = runtime ?? new Runtime();
         }
 
+        /// <summary>
+        /// Prepares a label set for execution by loading it and initializing the execution queue.
+        /// </summary>
+        /// <param name="set">The label set to execute.</param>
+        /// <exception cref="ArgumentNullException">Thrown when set is null.</exception>
         public void Prepare(LabelSet set)
         {
             _currentSet = set ?? throw new ArgumentNullException(nameof(set));
@@ -24,9 +39,13 @@ namespace DialoguePlus.Core
         }
 
         /// <summary>
-        /// Automatically steps
-        /// mode 0 = step to end, mode 1 = step to next dialogue/menu/call
+        /// Automatically steps through execution based on the specified mode.
+        /// Mode 0: Executes all instructions until completion.
+        /// Mode 1: Steps until reaching a dialogue, menu, or call instruction.
         /// </summary>
+        /// <param name="mode">The execution mode (0 or 1).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when mode is not 0 or 1.</exception>
         public async Task AutoStepAsync(int mode = 0, CancellationToken ct = default)
         {
             switch (mode)
@@ -50,9 +69,10 @@ namespace DialoguePlus.Core
         }
 
         /// <summary>
-        /// Execute the next instruction in the queue.
-        /// Returns true if there are more instructions in the queue; false if empty.
+        /// Executes the next instruction in the queue.
         /// </summary>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>True if there are more instructions in the queue; false if the queue is empty.</returns>
         public async Task<bool> StepAsync(CancellationToken ct = default)
         {
             if (!HasNext) return false;
@@ -97,7 +117,8 @@ namespace DialoguePlus.Core
         }
 
         /// <summary>
-        /// Asynchronous callback for dialogue statements.
+        /// Gets or sets the asynchronous callback invoked when a dialogue statement is executed.
+        /// The callback receives the runtime and dialogue statement, and should return a completed task when done.
         /// </summary>
         public Func<Runtime, SIR_Dialogue, Task> OnDialogueAsync { get; set; } =
             (runtime, statement) =>
@@ -108,7 +129,8 @@ namespace DialoguePlus.Core
             };
 
         /// <summary>
-        /// Asynchronous callback for menu statements.
+        /// Gets or sets the asynchronous callback invoked when a menu statement is executed.
+        /// The callback receives the runtime and menu statement, and should return the zero-based index of the selected option.
         /// </summary>
         public Func<Runtime, SIR_Menu, Task<int>> OnMenuAsync { get; set; } =
             async (runtime, statement) =>
@@ -252,7 +274,14 @@ namespace DialoguePlus.Core
             return instruction;
         }
 
+        /// <summary>
+        /// Gets whether there are more instructions to execute in the queue.
+        /// </summary>
         public bool HasNext => _execQueue.Count > 0;
+        /// <summary>
+        /// Peeks at the next instruction in the queue without removing it.
+        /// </summary>
+        /// <returns>The next instruction, or null if the queue is empty.</returns>
         public SIR? Peek() => _execQueue.First?.Value;
     }
 }

@@ -5,14 +5,28 @@ using System.Text;
 
 namespace DialoguePlus.Core
 {
+    /// <summary>
+    /// The main compiler for DialoguePlus scripts (.dp files).
+    /// Compiles source files into executable label sets and manages symbol tables.
+    /// </summary>
     public class Compiler
     {
+        /// <summary>
+        /// Gets the current version of the DialoguePlus compiler.
+        /// </summary>
         public static string Version => "1.0.2";
         private readonly IContentResolver _resolver;
 
         private readonly SymbolTableManager _symbolTableManager = new();
+        /// <summary>
+        /// Gets the symbol table manager containing symbol information for all compiled files.
+        /// </summary>
         public SymbolTableManager SymbolTables => _symbolTableManager;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Compiler"/> class.
+        /// </summary>
+        /// <param name="resolver">The content resolver to use for loading source files. If null, a default resolver with file and cache providers will be used.</param>
         public Compiler(IContentResolver? resolver = null)
         {
             _resolver = resolver ?? new ContentResolver().Register(new CacheContentProvider()).Register(new FileContentProvider());
@@ -24,6 +38,11 @@ namespace DialoguePlus.Core
         private static bool _IfPath(string pathOrUri)
             => !pathOrUri.StartsWith("file://") && !pathOrUri.StartsWith("http://") && !pathOrUri.StartsWith("https://");
 
+        /// <summary>
+        /// Compiles a DialoguePlus script file from a file path or URI.
+        /// </summary>
+        /// <param name="pathOrUri">The file path or URI of the source file to compile.</param>
+        /// <returns>A <see cref="CompileResult"/> containing the compilation status, diagnostics, and compiled label set.</returns>
         public CompileResult Compile(string pathOrUri)
         {
             var sourceID = _IfPath(pathOrUri) ? _PathToUri(pathOrUri) : pathOrUri;
@@ -34,12 +53,30 @@ namespace DialoguePlus.Core
         }
     }
 
+    /// <summary>
+    /// Represents the result of a compilation operation.
+    /// </summary>
     public sealed record CompileResult
     {
+        /// <summary>
+        /// Gets whether the compilation was successful (no errors).
+        /// </summary>
         public required bool Success { get; init; }
+        /// <summary>
+        /// Gets the list of diagnostics (errors, warnings, info) generated during compilation.
+        /// </summary>
         public required List<Diagnostic> Diagnostics { get; init; }
+        /// <summary>
+        /// Gets the compiled label set containing all executable labels and statements.
+        /// </summary>
         public required LabelSet Labels { get; init; }
+        /// <summary>
+        /// Gets the source ID (URI) of the main compiled file.
+        /// </summary>
         public required string SourceID { get; init; }
+        /// <summary>
+        /// Gets the Unix timestamp (milliseconds) when the compilation was performed.
+        /// </summary>
         public long Timestamp { get; init; }
     }
 

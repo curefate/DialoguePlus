@@ -103,8 +103,8 @@ label a:
 
 Call statements are used to invoke functions, which need to be registered in the host system (the game engine you are using). There are two ways to register:
 
-1. `Runtime.Functions.AddFunction<>()`, see [details]().
-2. `[DPFunction]` attribute, see [details](), only for Unity currently. Note that for instance methods, registering in this way will add an extra string parameter as the **first argument**, used to pass in the instance name..
+1. `Runtime.Functions.AddFunction<>()`, see [details](/docs/API.md).
+2. `[DPFunction]` attribute, see [details](/docs/UnityAdapter.md), only for Unity currently. Note that for instance methods, registering in this way will add an extra string parameter as the **first argument**, used to pass in the instance name..
 
 ```c#
 // In Unity
@@ -163,7 +163,7 @@ label any:
     Bob "I am {$global.var} years old."
 ```
 
-To know more about variable system, see [details]().
+To know more about variable system, see [details](/docs/API.md).
 
 ## If Statement
 
