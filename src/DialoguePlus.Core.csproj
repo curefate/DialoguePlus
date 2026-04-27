@@ -5,6 +5,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>DialoguePlus.Core</AssemblyName>
     <OutputType>Library</OutputType>
+    <!--<GenerateDocumentationFile>true</GenerateDocumentationFile>-->
     <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
 
