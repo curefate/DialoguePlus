@@ -11,10 +11,6 @@ namespace DialoguePlus.Core
     /// </summary>
     public class Compiler
     {
-        /// <summary>
-        /// Gets the current version of the DialoguePlus compiler.
-        /// </summary>
-        public static string Version => "1.0.2";
         private readonly IContentResolver _resolver;
 
         private readonly SymbolTableManager _symbolTableManager = new();

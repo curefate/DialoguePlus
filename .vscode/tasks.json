@@ -18,7 +18,7 @@
       "command": "dotnet build src/DialoguePlus.Core.csproj -c Debug",
       "problemMatcher": "$msCompile",
       "group": "build",
-      "detail": "Build Core in Debug; no copy happens because the MSBuild Target is conditioned on Release."
+      "detail": "Build Core in Debug."
     },
     {
       "label": "build release",
@@ -26,7 +26,7 @@
       "command": "dotnet build src/DialoguePlus.Core.csproj -c Release",
       "problemMatcher": "$msCompile",
       "group": "build",
-      "detail": "Build Core in Release; MSBuild Target will copy DLL+PDB to ../adapters/Unity/Assets/Plugins/."
+      "detail": "Build Core in Release."
     }
   ]
 }

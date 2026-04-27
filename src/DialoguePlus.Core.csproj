@@ -5,35 +5,11 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>DialoguePlus.Core</AssemblyName>
     <OutputType>Library</OutputType>
-
-    
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
+
+    <Version>1.0.0</Version>
   </PropertyGroup>
-
-  
-  
-  <PropertyGroup>
-    <UnityOutputDir Condition="'$(UnityOutputDir)'==''">..\adapters\Unity\Runtime\Plugins\</UnityOutputDir>
-  </PropertyGroup>
-
-
-  
-  
-  <Target Name="CopyCoreArtifactsToUnity" AfterTargets="Build"
-        Condition="'$(TargetFramework)'=='netstandard2.1' and '$(Configuration)'=='Release'">
-    <ItemGroup>
-      <ArtifactsToCopy Include="$(TargetDir)$(AssemblyName).dll" />
-      <ArtifactsToCopy Include="$(TargetDir)$(AssemblyName).pdb"
-                       Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
-    </ItemGroup>
-  
-    <Message Text="Copying artifacts to '$(UnityOutputDir)'" Importance="high" />
-    <MakeDir Directories="$(UnityOutputDir)" Condition="!Exists('$(UnityOutputDir)')" />
-    <Copy SourceFiles="@(ArtifactsToCopy)"
-          DestinationFolder="$(UnityOutputDir)"
-          SkipUnchangedFiles="true" />
-  </Target>
-
 
 </Project>

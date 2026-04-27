@@ -1,4 +1,4 @@
-import text2.dp
+import test2.dp
 
 label A:
     me "Hello!" #blablabla

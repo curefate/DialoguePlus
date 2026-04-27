@@ -4,8 +4,7 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        var path1 = "TestScripts/text.dp";
-        var path2 = "DialoguePlusSample_Unity/Assets/DPScript/s1.dp";
+        var path1 = "console/test.dp";
         var executer = new Executer();
         var compiler = new Compiler();
         var result = compiler.Compile(path1);
