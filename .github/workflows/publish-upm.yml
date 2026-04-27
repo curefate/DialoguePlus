@@ -55,7 +55,7 @@ jobs:
       - name: Checkout UPM repo
         uses: actions/checkout@v4
         with:
-          repository: curefate/DialoguePlus-UnityDLL
+          repository: curefate/DialoguePlus-Unity
           token: ${{ secrets.UPM_REPO_TOKEN }}
           path: upm
 
