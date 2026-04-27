@@ -29,14 +29,26 @@ jobs:
           echo "TAG=$tag" >> $env:GITHUB_ENV
           echo "VERSION=$version" >> $env:GITHUB_ENV
 
+      # 3.5. 提取数字版本
+      - name: Extract numeric version
+        shell: pwsh
+        run: |
+          $full = "${{ env.VERSION }}"
+          if ($full -match '^(\d+\.\d+\.\d+)') {
+            $numeric = $matches[1]
+          } else {
+            throw "Invalid version format: $full"
+          }
+          echo "NUMERIC_VERSION=$numeric" >> $env:GITHUB_ENV
+
       # 4. 构建 Core DLL（注入版本号）
       - name: Build Core (Release)
         shell: pwsh
         run: |
           dotnet build src/DialoguePlus.Core.csproj -c Release `
             /p:Version=${{ env.VERSION }} `
-            /p:AssemblyVersion=${{ env.VERSION }}.0 `
-            /p:FileVersion=${{ env.VERSION }}.0 `
+            /p:AssemblyVersion=${{ env.NUMERIC_VERSION }}.0 `
+            /p:FileVersion=${{ env.NUMERIC_VERSION }}.0 `
             /p:InformationalVersion=${{ env.VERSION }}+${{ github.sha }}
 
       # 5. 拉取 UPM 仓库
