@@ -1,7 +1,7 @@
 namespace DialoguePlus.Core
 {
     /// <summary>
-    /// A collection of compiled labels that can be executed by the <see cref="Executer"/>.
+    /// A collection of compiled labels that can be executed by the <see cref="Executor"/>.
     /// </summary>
     public class LabelSet
     {

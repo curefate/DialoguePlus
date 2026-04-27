@@ -5,7 +5,7 @@ public class Program
     public static async Task Main(string[] args)
     {
         var path1 = "console/test3.dp";
-        var executer = new Executer();
+        var executer = new Executor();
         var compiler = new Compiler();
         var result = compiler.Compile(path1);
 

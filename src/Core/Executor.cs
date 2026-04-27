@@ -6,7 +6,7 @@ namespace DialoguePlus.Core
     /// <summary>
     /// Executes compiled DialoguePlus scripts by processing SIR (Structured Intermediate Representation) instructions.
     /// </summary>
-    public class Executer
+    public class Executor
     {
         private readonly LinkedList<SIR> _execQueue = new();
         private LabelSet? _currentSet = null;
@@ -17,10 +17,10 @@ namespace DialoguePlus.Core
         public Runtime Runtime => _runtime;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Executer"/> class.
+        /// Initializes a new instance of the <see cref="Executor"/> class.
         /// </summary>
         /// <param name="runtime">The runtime instance to use. If null, a new runtime will be created.</param>
-        public Executer(Runtime? runtime = null)
+        public Executor(Runtime? runtime = null)
         {
             _runtime = runtime ?? new Runtime();
         }
