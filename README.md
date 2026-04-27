@@ -10,11 +10,13 @@ D+ is engine-agnostic at its core, allow host systems to override execution beha
 
 ## Navigation
 
-- [**D+ Grammar Reference**](docs/Grammar.md)  
+- [**D+ Syntax Reference**](docs/Syntax.md)  
 
-- [**Unity Adapter Documentation**](docs/UnityAdapter.md)
+- [**API Reference**](docs/API.md)
 
 - [**Core Library Architecture**](docs/Architexture.md)
+
+- [**Unity Adapter Documentation**](docs/UnityAdapter.md)
 
 - [**VS Code Extension**](https://github.com/curefate/DialoguePlus-Extension)
 
@@ -23,23 +25,66 @@ D+ is engine-agnostic at its core, allow host systems to override execution beha
 ![show](images/show.gif)
 
 > This example is from sample scene of Unity Adapter.
+> PS: Yeah I can see it looks... simple, but just for now :3
 
 ## Features
 
-- **Python-like grammar:** Clean, easy, unambiguous.
-- **Customizable:** Execution behaviour can be overriden by host system, suitable for most game genres.
-- **Modular and Extensible:** Core library is engine-agnostic.
+- **Python-like syntax:**  
+  Clean, easy, zero ambiguity.
+- **Customizable:**  
+  Execution behaviour can be overriden by host system, suitable for most game genres.
+- **Modular and Extensible:**  
+  Core library is engine-agnostic.
+
+## Quick Start
+
+### 1. Write a Script
+
+Create a `.dp` file with your story:
+
+```python
+Bob "Hello! Welcome to DialoguePlus."
+Bob "What's your favorite color?"
+"Red":
+    Bob "Red is vibrant!"
+"Blue":
+    Bob "Blue is calming."
+Bob "Thanks for trying D+!"
+```
+
+### 2. Compile and Execute
+
+**In Unity:**
+
+```csharp
+await DialoguePlusAdapter.Instance.ExecuteToEnd("path/to/script.dp");
+```
+
+**In C# (Console):**
+
+```csharp
+var compiler = new Compiler();
+var result = compiler.Compile("path/to/script.dp");
+
+if (result.Success)
+{
+    var executer = new Executer();
+    executer.Prepare(result.Labels);
+    await executer.AutoStepAsync(0); // Run to completion
+}
+```
+
+### 3. Learn More
+
+- **Unity Users**: See [Unity Adapter Documentation](docs/UnityAdapter.md)
+- **Scripting**: See [Syntax Reference](docs/Syntax.md)
+- **Integration**: See [API Reference](docs/API.md)
 
 ## Repository Structure
 
-- **Core Library**  
-  The D+ compiler, runtime executor, and core data structures
+- **Core Library:** src/
 
-- **Unity Adapter**  
-  Unity-specific integration layer and example project
-
-- **VS Code Extension**  
-  Editor support for D+ scripting
+- **Unity Adapter:** adapter/Unity
 
 ## License
 

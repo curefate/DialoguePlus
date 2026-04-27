@@ -22,7 +22,7 @@ label part1:
         Teto "I like you too."
     "No!":
         Teto "I don't care."
-    Miku "Are you understand?"
+    Miku "You understand?"
     "Yes! I totally understand!":
         Miku "Great!"
     "No, I don't understand.":

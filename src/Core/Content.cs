@@ -2,14 +2,38 @@ using System.Collections.Concurrent;
 
 namespace DialoguePlus.Core
 {
+    /// <summary>
+    /// Represents the content of a source file.
+    /// </summary>
+    /// <param name="Text">The text content of the source file.</param>
     public sealed record SourceContent(
         string Text
     );
 
+    /// <summary>
+    /// Interface for content providers that can load source files from different sources (file system, cache, HTTP, etc.).
+    /// </summary>
     public interface IContentProvider
     {
+        /// <summary>
+        /// Determines whether this provider can handle the specified URI scheme.
+        /// </summary>
+        /// <param name="uri">The URI to check.</param>
+        /// <returns>True if this provider can handle the URI; otherwise, false.</returns>
         bool CanHandle(Uri uri);
+        /// <summary>
+        /// Checks whether a source file exists at the specified URI.
+        /// </summary>
+        /// <param name="uri">The URI to check.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>True if the source exists; otherwise, false.</returns>
         Task<bool> ExistsAsync(Uri uri, CancellationToken ct = default);
+        /// <summary>
+        /// Opens and reads the text content from the specified URI.
+        /// </summary>
+        /// <param name="uri">The URI of the source to read.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The source content.</returns>
         Task<SourceContent> OpenTextAsync(Uri uri, CancellationToken ct = default);
     }
 
