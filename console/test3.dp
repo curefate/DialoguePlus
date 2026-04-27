@@ -1,0 +1,30 @@
+# test3.dp - regression cases for lexer order bugs
+jump main
+
+label main:
+    "Literal braces: {{ and }} {1+1}"
+
+    $a = 1
+    $b = 2
+    if $a <= $b:
+        "<= ok"
+    else:
+        "<= failed"
+
+    if $b >= $a:
+        ">= ok"
+    else:
+        ">= failed"
+
+    if $a == 1:
+        "== ok"
+    else:
+        "== failed"
+
+    if $a != $b:
+        "!= ok"
+    else:
+        "!= failed"
+
+    $a += 1
+    "After += : { $a }"

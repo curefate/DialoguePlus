@@ -33,15 +33,7 @@ namespace DialoguePlus.Core
             new LexicalDefinition(TokenType.Elif, "\\belif\\b"),
 
             // Operators
-            // Math
-            new LexicalDefinition(TokenType.Plus, "\\+"),
-            new LexicalDefinition(TokenType.Minus, "-"),
-            new LexicalDefinition(TokenType.Power, "\\*\\*"),
-            new LexicalDefinition(TokenType.Multiply, "\\*"),
-            new LexicalDefinition(TokenType.Divide, "/"),
-            new LexicalDefinition(TokenType.Modulo, "%"),
             // Assignment
-            new LexicalDefinition(TokenType.Assign, "="),
             new LexicalDefinition(TokenType.PlusAssign, "\\+="),
             new LexicalDefinition(TokenType.MinusAssign, "-="),
             new LexicalDefinition(TokenType.PowerAssign, "\\*\\*="),
@@ -49,15 +41,24 @@ namespace DialoguePlus.Core
             new LexicalDefinition(TokenType.DivideAssign, "/="),
             new LexicalDefinition(TokenType.ModuloAssign, "%="),
             // Comparison & Logic
-            new LexicalDefinition(TokenType.Less, "<"),
-            new LexicalDefinition(TokenType.Greater, ">"),
             new LexicalDefinition(TokenType.LessEqual, "<="),
             new LexicalDefinition(TokenType.GreaterEqual, ">="),
+            new LexicalDefinition(TokenType.Less, "<"),
+            new LexicalDefinition(TokenType.Greater, ">"),
             new LexicalDefinition(TokenType.Equal, "=="),
             new LexicalDefinition(TokenType.NotEqual, "!="),
             new LexicalDefinition(TokenType.And, "\\band\\b|&&"),
             new LexicalDefinition(TokenType.Or, "\\bor\\b|\\|\\|"),
             new LexicalDefinition(TokenType.Not, "\\bnot\\b|!"),
+            // Put short-circuiting operators at the end
+            new LexicalDefinition(TokenType.Assign, "="),
+            // Math
+            new LexicalDefinition(TokenType.Plus, "\\+"),
+            new LexicalDefinition(TokenType.Minus, "-"),
+            new LexicalDefinition(TokenType.Power, "\\*\\*"),
+            new LexicalDefinition(TokenType.Multiply, "\\*"),
+            new LexicalDefinition(TokenType.Divide, "/"),
+            new LexicalDefinition(TokenType.Modulo, "%"),
 
             // Punctuation
             new LexicalDefinition(TokenType.Comma, ","),
@@ -79,11 +80,11 @@ namespace DialoguePlus.Core
 
         private static readonly List<LexicalDefinition> pattern_fstring =
         [
-            new LexicalDefinition(TokenType.LBrace, "\\{", TokenrizeMode.Embed),
             new LexicalDefinition(TokenType.Linebreak, "\\r?\\n", TokenrizeMode.Fallback),
             new LexicalDefinition(TokenType.Fstring_Quote, "\"", TokenrizeMode.Fallback),
             new LexicalDefinition(TokenType.Fstring_Escape, "\\\\[\"\\\\nrt]|\\{\\{|\\}\\}"),
-            new LexicalDefinition(TokenType.Fstring_Content, "[^\"\\\\\\{\\r\\n]+"),
+            new LexicalDefinition(TokenType.LBrace, "\\{", TokenrizeMode.Embed),
+            new LexicalDefinition(TokenType.Fstring_Content, "[^\"\\\\\\{\\}\\r\\n]+"),
         ];
 
         private static readonly List<LexicalDefinition> pattern_path =
