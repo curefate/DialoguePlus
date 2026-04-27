@@ -1,0 +1,88 @@
+﻿name: Build Core and Publish to UPM
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-and-publish:
+    runs-on: windows-latest
+
+    steps:
+      # 1. 拉取 Core 源仓库
+      - name: Checkout Core repo
+        uses: actions/checkout@v4
+
+      # 2. 安装 .NET SDK
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # 3. 从 tag 中解析版本号
+      - name: Extract version from tag
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = $tag.TrimStart("v")
+          echo "TAG=$tag" >> $env:GITHUB_ENV
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+
+      # 4. 构建 Core DLL（注入版本号）
+      - name: Build Core (Release)
+        shell: pwsh
+        run: |
+          dotnet build src/DialoguePlus.Core.csproj -c Release `
+            /p:Version=${{ env.VERSION }} `
+            /p:AssemblyVersion=${{ env.VERSION }}.0 `
+            /p:FileVersion=${{ env.VERSION }}.0 `
+            /p:InformationalVersion=${{ env.VERSION }}+${{ github.sha }}
+
+      # 5. 拉取 UPM 仓库
+      - name: Checkout UPM repo
+        uses: actions/checkout@v4
+        with:
+          repository: curefate/DialoguePlus-UnityDLL
+          token: ${{ secrets.UPM_REPO_TOKEN }}
+          path: upm
+
+      # 6. 拷贝 DLL / PDB / XML 到 UPM 仓库
+      - name: Copy artifacts to UPM repo
+        shell: pwsh
+        run: |
+          $outDir = "src/bin/Release/netstandard2.1"
+          $destDir = "upm/Runtime/Plugins"
+
+          New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+
+          Copy-Item "$outDir/DialoguePlus.Core.dll" "$destDir/DialoguePlus.Core.dll" -Force
+
+          if (Test-Path "$outDir/DialoguePlus.Core.pdb") {
+            Copy-Item "$outDir/DialoguePlus.Core.pdb" "$destDir/DialoguePlus.Core.pdb" -Force
+          }
+
+          if (Test-Path "$outDir/DialoguePlus.Core.xml") {
+            Copy-Item "$outDir/DialoguePlus.Core.xml" "$destDir/DialoguePlus.Core.xml" -Force
+          }
+
+      # 7. 更新 UPM package.json 里的 version
+      - name: Update UPM package.json version
+        shell: pwsh
+        run: |
+          $pkg = "upm/package.json"
+          $json = Get-Content $pkg -Raw | ConvertFrom-Json
+          $json.version = "${{ env.VERSION }}"
+          $json | ConvertTo-Json -Depth 50 | Set-Content $pkg -Encoding UTF8
+
+      # 8. 提交并 push 到 UPM 仓库 main
+      - name: Commit and push to UPM repo
+        shell: pwsh
+        run: |
+          cd upm
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+
+          git add .
+          git commit -m "chore: update Core DLL to ${{ env.TAG }}" || echo "No changes"
+          git push
