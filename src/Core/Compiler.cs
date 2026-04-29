@@ -6,12 +6,34 @@ using System.Text;
 namespace DialoguePlus.Core
 {
     /// <summary>
+    /// Represents a compilation request.
+    /// </summary>
+    public sealed record CompileRequest
+    {
+        /// <summary>
+        /// The entry sourceId of the script to compile.
+        /// </summary>
+        public required string EntrySourceId { get; init; }
+
+        /// <summary>
+        /// Optional in-memory text for the entry document.
+        /// When provided, this text is used for the entry sourceId instead of querying the content resolver.
+        /// </summary>
+        public string? EntryTextOverride { get; init; }
+
+        /// <summary>
+        /// Cancellation token for the compilation.
+        /// </summary>
+        public CancellationToken CancellationToken { get; init; } = default;
+    }
+
+    /// <summary>
     /// The main compiler for DialoguePlus scripts (.dp files).
     /// Compiles source files into executable label sets and manages symbol tables.
     /// </summary>
     public class Compiler
     {
-        private readonly IContentResolver _resolver;
+        private readonly IScriptResolver _resolver;
 
         private readonly SymbolTableManager _symbolTableManager = new();
         /// <summary>
@@ -22,28 +44,33 @@ namespace DialoguePlus.Core
         /// <summary>
         /// Initializes a new instance of the <see cref="Compiler"/> class.
         /// </summary>
-        /// <param name="resolver">The content resolver to use for loading source files. If null, a default resolver with file and cache providers will be used.</param>
-        public Compiler(IContentResolver? resolver = null)
+        /// <param name="resolver">The script resolver to use for loading sources and resolving imports.</param>
+        public Compiler(IScriptResolver resolver)
         {
-            _resolver = resolver ?? new ContentResolver().Register(new CacheContentProvider()).Register(new FileContentProvider());
+            _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
         }
 
-        private static string _PathToUri(string path)
-            => new Uri(Path.GetFullPath(path)).AbsoluteUri;
+        /// <summary>
+        /// Compiles a DialoguePlus script from an entry sourceId.
+        /// </summary>
+        /// <param name="request">Compilation request.</param>
+        /// <returns>A <see cref="CompileResult"/> containing the compilation status, diagnostics, and compiled label set.</returns>
+        public CompileResult Compile(CompileRequest request)
+        {
+            if (request == null) throw new ArgumentNullException(nameof(request));
 
-        private static bool _IfPath(string pathOrUri)
-            => !pathOrUri.StartsWith("file://") && !pathOrUri.StartsWith("http://") && !pathOrUri.StartsWith("https://");
+            return CompileAsync(request).GetAwaiter().GetResult();
+        }
 
         /// <summary>
-        /// Compiles a DialoguePlus script file from a file path or URI.
+        /// Compiles a DialoguePlus script asynchronously.
         /// </summary>
-        /// <param name="pathOrUri">The file path or URI of the source file to compile.</param>
-        /// <returns>A <see cref="CompileResult"/> containing the compilation status, diagnostics, and compiled label set.</returns>
-        public CompileResult Compile(string pathOrUri)
+        public async Task<CompileResult> CompileAsync(CompileRequest request)
         {
-            var sourceID = _IfPath(pathOrUri) ? _PathToUri(pathOrUri) : pathOrUri;
-            var session = new CompilationSession(sourceID, _resolver);
-            var result = session.CompileAsync().GetAwaiter().GetResult();
+            if (request == null) throw new ArgumentNullException(nameof(request));
+
+            var session = new CompilationSession(request.EntrySourceId, _resolver, request.EntryTextOverride);
+            var result = await session.CompileAsync(request.CancellationToken).ConfigureAwait(false);
             _symbolTableManager.Merge(session.SymbolTables);
             return result;
         }
@@ -78,7 +105,8 @@ namespace DialoguePlus.Core
 
     internal class CompilationSession
     {
-        private IContentResolver _resolver;
+        private readonly IScriptResolver _resolver;
+        private readonly string? _entryTextOverride;
 
         public long Timestamp { get; init; } = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         public string SourceID { get; init; }
@@ -87,18 +115,22 @@ namespace DialoguePlus.Core
         public SymbolTableManager SymbolTables { get; init; } = new SymbolTableManager();
         public Dictionary<string, LabelSet> ImportedLabelSets { get; init; } = [];
 
-        public CompilationSession(string sourceID, IContentResolver resolver)
+        public CompilationSession(string sourceID, IScriptResolver resolver, string? entryTextOverride = null)
         {
             SourceID = sourceID;
             _resolver = resolver;
+            _entryTextOverride = entryTextOverride;
         }
 
-        private bool IsAbsolutePath(string path)
-            => Path.IsPathRooted(path);
-
-        private async Task<string> GetSourceTextAsync(string uri, CancellationToken cancellationToken = default)
+        private async Task<string> GetSourceTextAsync(string sourceId, CancellationToken cancellationToken = default)
         {
-            var context = await _resolver.GetTextAsync(uri, cancellationToken).ConfigureAwait(false);
+            // Use the entry override only for the main entry sourceId.
+            if (_entryTextOverride != null && sourceId == SourceID)
+            {
+                return _entryTextOverride;
+            }
+
+            var context = await _resolver.Content.GetTextAsync(sourceId, cancellationToken).ConfigureAwait(false);
             return context.Text;
         }
 
@@ -119,33 +151,33 @@ namespace DialoguePlus.Core
             return resultSet;
         }
 
-        private async Task CompileInternalAsync(string uri, string code, CancellationToken cancellationToken = default, int line = -1, int column = -1)
+        private async Task CompileInternalAsync(string sourceId, string code, CancellationToken cancellationToken = default, int line = -1, int column = -1)
         {
-            if (ImportedLabelSets.ContainsKey(uri))
+            if (ImportedLabelSets.ContainsKey(sourceId))
             {
                 return;
             }
 
-            var diagnostics = uri == SourceID ? Diagnostics : new DiagnosticEngine();
+            var diagnostics = sourceId == SourceID ? Diagnostics : new DiagnosticEngine();
             var lexer = new Lexer(new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(code))), diagnostics);
             var parser = new Parser(lexer, diagnostics);
             var ast = parser.Parse();
 
-            var table = new FileSymbolTable { SourceID = uri };
+            var table = new FileSymbolTable { SourceID = sourceId };
             var labelSet = new LabelSet();
-            ImportedLabelSets.Add(uri, labelSet); // Prevent circular import
+            ImportedLabelSets.Add(sourceId, labelSet); // Prevent circular import
             var builder = new IRBuilder(table);
 
             foreach (var import in ast.Imports)
             {
-                var importUri = IsAbsolutePath(import.Path.Lexeme) ? new Uri(import.Path.Lexeme).AbsoluteUri : new Uri(new Uri(uri), import.Path.Lexeme).AbsoluteUri;
+                var importedSourceId = _resolver.Imports.Resolve(sourceId, import.Path.Lexeme);
                 try
                 {
-                    var importCode = await GetSourceTextAsync(importUri, cancellationToken).ConfigureAwait(false);
-                    await CompileInternalAsync(importUri, importCode, cancellationToken, import.Path.Line, import.Path.Column).ConfigureAwait(false);
-                    table.AddReference(importUri, new SymbolPosition
+                    var importCode = await GetSourceTextAsync(importedSourceId, cancellationToken).ConfigureAwait(false);
+                    await CompileInternalAsync(importedSourceId, importCode, cancellationToken, import.Path.Line, import.Path.Column).ConfigureAwait(false);
+                    table.AddReference(importedSourceId, new SymbolPosition
                     {
-                        SourceID = uri,
+                        SourceID = sourceId,
                         Label = null,
                         Line = import.Path.Line,
                         Column = import.Path.Column,
@@ -171,12 +203,12 @@ namespace DialoguePlus.Core
                 }
             }
 
-            if (ast.TopLevelStatements.Count > 0 && uri == SourceID)
+            if (ast.TopLevelStatements.Count > 0 && sourceId == SourceID)
             {
                 SIR_Label topLabel = new()
                 {
                     LabelName = LabelSet.DefaultEntranceLabel,
-                    SourceID = uri,
+                    SourceID = sourceId,
                     Line = -1,
                     Column = -1,
                 };
@@ -221,14 +253,14 @@ namespace DialoguePlus.Core
                 }
             }
 
-            ImportedLabelSets[uri] = labelSet;
+            ImportedLabelSets[sourceId] = labelSet;
             SymbolTables.UpdateFileSymbols(table);
 
             if (diagnostics?.Counts[Diagnostic.SeverityLevel.Error] > 0)
             {
                 Diagnostics.Report(new Diagnostic
                 {
-                    Message = $"[Compiler] Compilation of '{uri}' failed with {diagnostics.Counts[Diagnostic.SeverityLevel.Error]} error(s).",
+                    Message = $"[Compiler] Compilation of '{sourceId}' failed with {diagnostics.Counts[Diagnostic.SeverityLevel.Error]} error(s).",
                     Line = line,
                     Column = column,
                     Severity = Diagnostic.SeverityLevel.Warning

@@ -6,8 +6,14 @@ public class Program
     {
         var path1 = "console/test3.dp";
         var executer = new Executor();
-        var compiler = new Compiler();
-        var result = compiler.Compile(path1);
+        var resolver = ResolverPresets.CreateFileSystemWithCache();
+        var compiler = new Compiler(resolver);
+        var entry = args.Length > 0 ? args[0] : path1;
+        entry = Path.GetFullPath(entry);
+        var result = compiler.Compile(new CompileRequest
+        {
+            EntrySourceId = entry
+        });
 
         Console.ForegroundColor = ConsoleColor.Red;
         foreach (var diag in result.Diagnostics)
@@ -19,7 +25,7 @@ public class Program
         if (result.Success)
         {
             executer.Prepare(result.Labels);
-            while(executer.HasNext)
+            while (executer.HasNext)
             {
                 await executer.StepAsync();
             }
